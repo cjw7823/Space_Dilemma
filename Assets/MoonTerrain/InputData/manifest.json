@@ -1,0 +1,31 @@
+{
+  "manifestVersion": 2,
+  "tileCols": 4,
+  "tileRows": 4,
+  "tileResolution": 1025,
+  "tileWidthMeters": 4998.75,
+  "tileLengthMeters": 4998.75,
+  "totalWidthMeters": 19995.0,
+  "totalLengthMeters": 19995.0,
+  "heightRangeMeters": 5939.4725341796875,
+  "sourceMinHeightMeters": 860.0025634765625,
+  "sourceMaxHeightMeters": 6799.47509765625,
+  "sourceWidthPixels": 4000,
+  "sourceHeightPixels": 4000,
+  "sourcePixelWidthMeters": 5.0,
+  "sourcePixelHeightMeters": 5.0,
+  "actualUnitySampleStepXMeters": 4.881591796875,
+  "actualUnitySampleStepZMeters": 4.881591796875,
+  "sourceCrs": "PROJCS[\"Moon (2015) - Sphere / Ocentric / South Polar\",GEOGCS[\"Moon (2015) - Sphere / Ocentric\",DATUM[\"Moon (2015) - Sphere\",SPHEROID[\"Moon (2015) - Sphere\",1737400,0,AUTHORITY[\"IAU\",\"30100\"]],AUTHORITY[\"IAU\",\"30100\"]],PRIMEM[\"Reference Meridian\",0,AUTHORITY[\"IAU\",\"30100\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"IAU\",\"30100\"]],PROJECTION[\"Polar_Stereographic\"],PARAMETER[\"latitude_of_origin\",-90],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",NORTH],AXIS[\"Northing\",NORTH],AUTHORITY[\"IAU\",\"30135\"]]",
+  "sourceNorthwestPixelCentreXY": [
+    74002.5,
+    119997.5
+  ],
+  "sourceSoutheastPixelCentreXY": [
+    93997.5,
+    100002.5
+  ],
+  "filledNodataPixelCount": 0,
+  "sourceDataName": "A307_GLDELEV_005.tif",
+  "notes": "Physical dimensions match the source pixel-centre envelope. Heights are linearly resampled into 2^n+1 Unity grids; generated samples are not new NASA observations."
+}
