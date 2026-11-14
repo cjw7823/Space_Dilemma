@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92b710ce3ac657d4098d1c3147bfbe75, type: 3}
+  m_Name: CustomInputSettings
+  m_EditorClassIdentifier: SpaceDilemma.CustomInput::SpaceDilemma.CustomInput.CustomInputSettings
+  installAutomatically: 1
+  sceneNames:
+  - SampleScene
+  actions: {fileID: -944628639613478452, guid: 01b355dc065be584a8d69f6b81680de9, type: 3}
+  gameplay: {fileID: 11400000, guid: 460ea025d9da1d7469be6e73be622230, type: 2}
+  ui: {fileID: 11400000, guid: c4c64e2e5bcf08d43b5902e7df0f6369, type: 2}
+  solarGenerator: {fileID: 11400000, guid: a1f995d47b83ea84ab187505884a7449, type: 2}
+  oxygenGenerator: {fileID: 11400000, guid: 7c86fb81924f9b14db52d45a05803c97, type: 2}
+  serial:
+    connectOnStart: 0
+    portName: 
+    baudRate: 115200
+    dataBits: 8
+    parity: 0
+    stopBits: 0
+    dtr: 1
+    rts: 0
+    reconnect: 1
+    reconnectSeconds: 1
+    inputTimeoutSeconds: 1
+    startupGraceSeconds: 3
+    maximumLineBytes: 96
+    maximumSequence: 65535
+    maximumButtonMask: 15
+  calibration:
+    knob:
+      enabled: 1
+      minimum: 0
+      center: 500
+      maximum: 1000
+      invert: 0
+      deadZone: 0
+      sensitivity: 1
+    slider:
+      enabled: 1
+      minimum: 0
+      center: 500
+      maximum: 1000
+      invert: 0
+      deadZone: 0
+      sensitivity: 1
+    joystick1X:
+      enabled: 1
+      minimum: 0
+      center: 500
+      maximum: 1000
+      invert: 0
+      deadZone: 0
+      sensitivity: 1
+    joystick1Y:
+      enabled: 1
+      minimum: 0
+      center: 500
+      maximum: 1000
+      invert: 0
+      deadZone: 0
+      sensitivity: 1
+    joystick2X:
+      enabled: 1
+      minimum: 0
+      center: 500
+      maximum: 1000
+      invert: 0
+      deadZone: 0
+      sensitivity: 1
+    joystick2Y:
+      enabled: 1
+      minimum: 0
+      center: 500
+      maximum: 1000
+      invert: 0
+      deadZone: 0
+      sensitivity: 1
+    stickDeadZone: 0.12
+    knobInterpretation: 0
+    knobWraps: 0
+    buttonEnabled: 01010101
+    buttonBits: 00000000010000000200000003000000
+  lookDegreesPerSecond: 120

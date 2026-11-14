@@ -1,0 +1,7 @@
+{
+  "name": "SpaceDilemma.CustomInput",
+  "rootNamespace": "SpaceDilemma.CustomInput",
+  "references": ["Unity.InputSystem", "Unity.ugui"],
+  "autoReferenced": true,
+  "allowUnsafeCode": false
+}

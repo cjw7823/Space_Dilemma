@@ -1,4 +1,5 @@
 using StarterAssets;
+using SpaceDilemma.CustomInput;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,7 +7,7 @@ using UnityEngine.InputSystem;
 /// <summary>Input capture and startup framing for the Starter Assets third-person motor.</summary>
 [DefaultExecutionOrder(-100)]
 [RequireComponent(typeof(ThirdPersonController),typeof(StarterAssetsInputs),typeof(PlayerInput))]
-public sealed class MoonBasePlayer : MonoBehaviour
+public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
 {
     public CinemachineCamera thirdPersonCamera;
     public MoonRover rover;
@@ -87,6 +88,16 @@ public sealed class MoonBasePlayer : MonoBehaviour
     void Update()
     {
         var keyboard=Keyboard.current; var mouse=Mouse.current;
+        var unified = InputHub.Active;
+        bool useUnified = unified && unified.player == playerInput;
+        if (useUnified && !unified.GameplayAllowed)
+        {
+            ClearInput();
+            if (IsDriving) rover.Stop();
+            return;
+        }
+        if (useUnified && focused && !ControlCaptured && unified.NonPointerGameplayActivity)
+            SetControlCaptured(true);
         bool released=false;
         if(keyboard!=null && keyboard.escapeKey.wasPressedThisFrame) { SetControlCaptured(false); released=true; }
         if(!released && focused && !ControlCaptured && mouse!=null && mouse.leftButton.wasPressedThisFrame)
@@ -101,10 +112,12 @@ public sealed class MoonBasePlayer : MonoBehaviour
             if (IsDriving) rover.Stop();
             return;
         }
-        Vector2 move=actions.FindAction("Player/Move",false)?.ReadValue<Vector2>() ?? Vector2.zero;
+        Vector2 move=useUnified ? unified.ReadVector("Move") : actions.FindAction("Player/Move",false)?.ReadValue<Vector2>() ?? Vector2.zero;
         input.move=move.sqrMagnitude<.0225f ? Vector2.zero : Vector2.ClampMagnitude(move,1);
-        input.look=(actions.FindAction("Player/Look",false)?.ReadValue<Vector2>() ?? Vector2.zero)*mouseSensitivity;
-        if (rover && keyboard != null && keyboard.tKey.wasPressedThisFrame)
+        input.look=useUnified ? unified.ReadLookInput(mouseSensitivity) : (actions.FindAction("Player/Look",false)?.ReadValue<Vector2>() ?? Vector2.zero)*mouseSensitivity;
+        // Rate input must pass the motor's small-value threshold BEFORE multiplying by dt.
+        input.lookFromTouch = useUnified && unified.LookUsesRate;
+        if (rover && (useUnified ? unified.WasPressed("Interact") : keyboard != null && keyboard.tKey.wasPressedThisFrame))
         {
             if (IsDriving) LeaveRover();
             else if (rover.CanBoard(transform.position)) BoardRover();
@@ -112,15 +125,16 @@ public sealed class MoonBasePlayer : MonoBehaviour
         if (IsDriving)
         {
             rover.Drive(input.move, Time.deltaTime);
-            driveYaw += input.look.x;
-            drivePitch = Mathf.Clamp(drivePitch + input.look.y, -12f, 65f);
+            Vector2 frameLook = input.look * (input.lookFromTouch ? Time.deltaTime : 1f);
+            driveYaw += frameLook.x;
+            drivePitch = Mathf.Clamp(drivePitch + frameLook.y, -12f, 65f);
             rover.cameraTarget.rotation = rover.transform.rotation * Quaternion.Euler(drivePitch, driveYaw, 0f);
             transform.SetPositionAndRotation(rover.driverSeat.position, rover.transform.rotation);
             return;
         }
-        input.lookFromTouch=false;
-        input.jump=actions.FindAction("Player/Jump",false)?.WasPressedThisFrame() ?? false;
-        input.sprint=actions.FindAction("Player/Sprint",false)?.IsPressed() ?? false;
+        if (!useUnified) input.lookFromTouch=false;
+        input.jump=useUnified ? unified.WasPressed("Jump") : actions.FindAction("Player/Jump",false)?.WasPressedThisFrame() ?? false;
+        input.sprint=useUnified ? unified.IsPressed("Sprint") : actions.FindAction("Player/Sprint",false)?.IsPressed() ?? false;
     }
 
     void BoardRover()

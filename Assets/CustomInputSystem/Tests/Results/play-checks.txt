@@ -1,0 +1,61 @@
+PASS Actual SampleScene bootstraps InputHub and existing MoonBasePlayer
+PASS Scene Terrain count preserved in Play mode: 9
+PASS Existing PlayerInput uses the unified runtime Action copy
+PASS InputSystemUIInputModule shares the actual PlayerInput actions
+PASS Automatic exclusive device switching disabled
+PASS Synthetic focus enables actual-player input in batch mode
+PASS Keyboard, mouse, Gamepad and SerialController paired simultaneously
+PASS Existing WASD reaches StarterAssets movement
+PASS Actual Starter Assets CharacterController moves in SampleScene
+PASS Keyboard release clears movement
+PASS Existing Shift sprint preserved
+PASS Existing Space jumps through actual Starter Assets motor
+PASS Mouse delta rotates the existing third-person camera
+PASS Unity Gamepad left stick reaches same movement action
+PASS Gamepad stick rotates actual camera using a rate, not mouse delta
+PASS Serial joystick2 rotates the same camera
+PASS Serial joystick1 reaches same movement action
+PASS Stronger vector wins without summing opposite devices
+PASS Equal-magnitude vector tie keeps current Gamepad owner
+PASS Vector ownership hands over when active device returns to neutral
+PASS Short Serial jump press/release survives one frame on actual PlayerInput actions
+PASS Releasing Gamepad does not release Jump still held by Serial
+PASS Button OR releases after all sources release
+PASS Existing rover reference retained
+PASS Scene has a reachable rover interaction position
+PASS Gamepad Interact boards existing rover through same gameplay logic as T
+PASS Short Serial Interact exits rover through the existing dismount logic
+PASS UI context and real uGUI panel opened
+PASS UI blocks character motion and releases cursor
+PASS Held joystick gated at context transition
+PASS EventSystem navigation uses bounded initial-delay/repeat interval; moves=5
+PASS Second gamepad stick scrolls real ScrollRect
+PASS Serial slider adjusts a real uGUI value
+PASS Closing UI restores Gameplay and previous captured state
+PASS Same serial slider maps to SolarGenerator/PowerOutput
+PASS Same serial slider remaps to OxygenGenerator/OxygenOutput
+PASS Previous facility map disabled to prevent duplicate execution
+PASS Gamepad trigger performs the same facility action
+PASS Absolute scalar ownership moves to last changed source, not greatest value
+PASS Nested UI restores previous facility context
+PASS Context ScriptableObject changes a binding without code or changing Gamepad binding
+PASS Returning to Gameplay does not resurrect a held joystick
+PASS Movement resumes after neutral and new actuation
+PASS Serial disconnect clears gameplay state
+PASS Keyboard remains usable with Serial disconnected
+PASS HID removal preserves context and PlayerInput map
+PASS Keyboard remains usable after HID removal
+PASS Keyboard F2 opens the real UI context via Input Action
+PASS Short Serial UI Cancel restores Gameplay
+PASS Serial menu button opens same UI context
+PASS Reconnected Gamepad can cancel UI without disabling Keyboard
+PASS Gamepad Submit invokes actual selected uGUI Button and opens Solar context
+PASS Short Serial Submit invokes the same EventSystem Button path
+PASS Held Gameplay button does not become an accidental UI Cancel on entry
+PASS UI Cancel works after held button releases and is pressed again
+PASS Actual scene+UI rendered at 1280x720
+PASS Actual scene+UI rendered at 1920x1080
+PASS Disabling integration restores original PlayerInput asset and switching behavior
+PASS Original fallback keyboard path works after integration shutdown
+PASS No Unity errors during actual-scene integration: 
+RESULT checks=60 failures=0

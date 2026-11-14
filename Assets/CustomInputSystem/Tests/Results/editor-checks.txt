@@ -1,0 +1,50 @@
+PASS Native Windows COM enumeration succeeds; detected=2
+PASS New protocol sample parses
+PASS K,S1,JX1,JY1,JX2,JY2 order preserved
+PASS Malformed/out-of-range rejected: 
+PASS Malformed/out-of-range rejected: S,1,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: S,1,0,0,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: S,x,0,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: S,1,1001,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: S,65536,0,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: S,1,-1,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: S,1,0,0,0,0,0,0,16
+PASS Malformed/out-of-range rejected: S,1, 0,0,0,0,0,0,0
+PASS Malformed/out-of-range rejected: ID,1,CTRL_A,UNIT01,8
+PASS Inclusive field bounds
+PASS Partial packet buffered
+PASS Split and multiple packets; CRLF compatibility
+PASS Oversize packet discarded through LF; parser recovers
+PASS Non-ASCII packet discarded
+PASS Configurable default neutral
+PASS Radial dead zone
+PASS Axis inversion
+PASS Non-default neutral calibration
+PASS Scalar range, normalization and inversion
+PASS Scalar sensitivity is configurable
+PASS Analog input can be disabled
+PASS Configured negative analog range is accepted
+PASS Default settings and context assets generated
+PASS UI priority overrides Facility
+PASS UI pop restores previous facility
+PASS Facility pop restores Gameplay
+PASS Equal priority uses last-pushed token
+PASS Out-of-order pop preserves higher stack entry
+PASS Backend preserves every short button transition in receive order (Actions checked in Play mode)
+PASS SEQ wraps at configured maximum
+PASS SEQ gap counted
+PASS Held serial button reaches device state
+PASS Disconnect releases held device state
+PASS Button bit routing independent of physical labels
+PASS Button channel can be disabled
+PASS Optional knob delta interpretation
+PASS Connection failure is reported without throwing on main thread
+PASS Reconnect restores packets after failed open (fake transport)
+PASS Timeout clears virtual device and held buttons
+PASS Packets resume after timeout/reconnect (fake transport)
+PASS Existing Player action identity retained: Move
+PASS Existing Player action identity retained: Look
+PASS Existing Player action identity retained: Jump
+PASS Existing Player action identity retained: Sprint
+PASS Original control scheme names retained
+RESULT checks=49 failures=0
