@@ -28,6 +28,9 @@ namespace StarterAssets
         [Tooltip("Acceleration and deceleration")]
         public float SpeedChangeRate = 10.0f;
 
+        [Tooltip("Stop horizontal motion on release and drive locomotion from actual displacement.")]
+        public bool ResponsiveLocomotion;
+
         public AudioClip LandingAudioClip;
         public AudioClip[] FootstepAudioClips;
         [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
@@ -166,6 +169,14 @@ namespace StarterAssets
             CameraRotation();
         }
 
+        public void SyncLookDirection()
+        {
+            Vector3 angles = CinemachineCameraTarget.transform.eulerAngles;
+            _cinemachineTargetYaw = angles.y;
+            _cinemachineTargetPitch = Mathf.DeltaAngle(CameraAngleOverride, angles.x);
+            _verticalVelocity = 0f;
+        }
+
         private void AssignAnimationIDs()
         {
             _animIDSpeed = Animator.StringToHash("Speed");
@@ -213,6 +224,12 @@ namespace StarterAssets
 
         private void Move()
         {
+            if (ResponsiveLocomotion)
+            {
+                MoveWithResponsiveLocomotion();
+                return;
+            }
+
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
@@ -276,6 +293,46 @@ namespace StarterAssets
             {
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+            }
+        }
+
+        private void MoveWithResponsiveLocomotion()
+        {
+            float dt = Time.deltaTime;
+            if (dt <= 0f) return;
+
+            bool moving = _input.move.sqrMagnitude > 0.0001f;
+            Vector3 horizontal = Vector3.zero;
+            if (moving)
+            {
+                float yaw = Mathf.Atan2(_input.move.x, _input.move.y) * Mathf.Rad2Deg +
+                    _mainCamera.transform.eulerAngles.y;
+                Quaternion heading = Quaternion.Euler(0f, yaw, 0f);
+                // Ease through turns, but avoid translating sideways while the body catches up.
+                transform.rotation = RotationSmoothTime > 0f
+                    ? Quaternion.RotateTowards(transform.rotation, heading, 120f / RotationSmoothTime * dt)
+                    : heading;
+                float alignment = Mathf.Clamp01(Vector3.Dot(transform.forward, heading * Vector3.forward));
+                float inputMagnitude = _input.analogMovement ? Mathf.Clamp01(_input.move.magnitude) : 1f;
+                float targetSpeed = (_input.sprint ? SprintSpeed : MoveSpeed) * inputMagnitude;
+                float forwardSpeed = Mathf.Max(0f, Vector3.Dot(_controller.velocity, transform.forward));
+                float speed = Mathf.Lerp(forwardSpeed, targetSpeed, 1f - Mathf.Exp(-SpeedChangeRate * dt));
+                horizontal = transform.forward * (speed * alignment);
+            }
+
+            Vector3 previousPosition = transform.position;
+            _controller.Move((horizontal + Vector3.up * _verticalVelocity) * dt);
+
+            if (_hasAnimator)
+            {
+                Vector3 displacement = transform.position - previousPosition;
+                float actualSpeed = moving ? new Vector2(displacement.x, displacement.z).magnitude / dt : 0f;
+                // Match this Animator's walk/run blend thresholds to the configured speeds.
+                float blendSpeed = actualSpeed <= MoveSpeed
+                    ? 2f * Mathf.InverseLerp(0f, MoveSpeed, actualSpeed)
+                    : Mathf.Lerp(2f, 6f, Mathf.InverseLerp(MoveSpeed, SprintSpeed, actualSpeed));
+                _animator.SetFloat(_animIDSpeed, blendSpeed);
+                _animator.SetFloat(_animIDMotionSpeed, 1f);
             }
         }
 
