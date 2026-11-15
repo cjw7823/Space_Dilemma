@@ -34,14 +34,21 @@ namespace SpaceDilemma.Survival
     // A frame may cross the start of the event or a terminal boundary.
     public sealed class SurvivalRun
     {
-        readonly double duration, speHour, speEndHour, normalRate, speRate, limit, indoorTransmission;
+        readonly double duration, speHour, speEndHour, normalRate, limit, indoorTransmission;
+        readonly bool fitSpeToRemainingDose;
+        readonly double speRemainingDoseMultiplier;
         readonly RadiationExposure exposure;
+        double speRate;
         double activeTransmission = 1;
         public double Hours { get; private set; }
         public double Remaining => duration - Hours;
         public double Dose => exposure.Dose;
         public double DoseLimit => limit;
         public double Rate { get; private set; }
+        public double SpeOutdoorRate => speRate;
+        public bool SpeRateCalibrated { get; private set; }
+        public double SpeCalibrationHour { get; private set; }
+        public double SpeStartDose { get; private set; }
         public double IndoorSpeHours { get; private set; }
         public double ShieldedSpeHours { get; private set; }
         public double ReductionHours { get; private set; }
@@ -54,23 +61,38 @@ namespace SpaceDilemma.Survival
 
         public SurvivalRun(double duration, double speHour, double normalRate, double speRate,
             double limit, double indoorTransmission, double initialHours = 0, double initialDose = 0,
-            double speDurationHours = 0)
+            double speDurationHours = 0, bool fitSpeToRemainingDose = false, double speRemainingDoseMultiplier = 1)
         {
             this.duration = Math.Max(.001, Nonnegative(duration));
             this.speHour = Nonnegative(speHour);
             speEndHour = Nonnegative(speDurationHours) > 0 ? this.speHour + speDurationHours : double.PositiveInfinity;
             this.normalRate = Nonnegative(normalRate);
             this.speRate = Nonnegative(speRate);
+            this.fitSpeToRemainingDose = fitSpeToRemainingDose;
+            this.speRemainingDoseMultiplier = Math.Max(1, Nonnegative(speRemainingDoseMultiplier));
             this.limit = Math.Max(.001, Nonnegative(limit));
             this.indoorTransmission = Math.Min(1, Nonnegative(indoorTransmission));
             Hours = Math.Min(this.duration, Nonnegative(initialHours));
             exposure = new RadiationExposure(Math.Min(this.limit, Nonnegative(initialDose)));
+            CalibrateSpeRate();
         }
 
         static double Nonnegative(double value) => double.IsFinite(value) ? Math.Max(0, value) : 0;
 
+        void CalibrateSpeRate()
+        {
+            if (!fitSpeToRemainingDose || SpeRateCalibrated || !SpeActive || Remaining <= 0) return;
+            // Capture once at event entry, before applying indoor or powered shielding.
+            // A custom start during the event uses that start's dose and remaining time.
+            SpeCalibrationHour = Hours;
+            SpeStartDose = Dose;
+            speRate = Math.Max(0, limit - Dose) / Remaining * speRemainingDoseMultiplier;
+            SpeRateCalibrated = true;
+        }
+
         public void UpdateRate(bool inside, IRadiationShield shield)
         {
+            CalibrateSpeRate();
             double active = Math.Clamp(shield?.Transmission(inside, SpeActive) ?? 1, 0, 1);
             activeTransmission = active;
             Rate = Outcome == SurvivalOutcome.Running

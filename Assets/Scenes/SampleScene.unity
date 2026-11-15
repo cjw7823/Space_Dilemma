@@ -52170,11 +52170,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Outdoor rate = observed mean \xD7 k \xF7 1,000 (k = 570)\n6.5359 \u2192
-    37.1205 game mSv per game hour\n1 play second = 0.08 game hours\n+0.5229 \u2192
-    +2.9696 game mSv per outdoor second\n\nAt 8:00 of play, the meter starts rising
-    at the SPE rate (5.68\xD7 as fast).\nGame mSv is a simulation unit. The scale
-    is set for gameplay."
+  m_text: "Before SPE: +0.5229 game mSv per play second (observed mean \xD7 k \xF7
+    1,000; k = 570)\n\nAt 8:00, the outdoor rate is fixed once:\nremaining dose limit
+    \xF7 remaining game time \xD7 1.1.\nGameplay margin: +10%.\nStay outside \u2192
+    100% before mission end.\nShelter reduces exposure; the rate stays fixed.\nGame
+    mSv is a gameplay unit."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7695504b7bf26d34eba0c84392fad836, type: 2}
   m_sharedMaterial: {fileID: -7832952161388172665, guid: 7695504b7bf26d34eba0c84392fad836, type: 2}

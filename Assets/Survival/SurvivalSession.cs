@@ -49,7 +49,8 @@ namespace SpaceDilemma.Survival
             if (config)
                 Run = new SurvivalRun(config.time.durationHours, config.time.speStartHour, config.radiation.NormalRate,
                     config.radiation.SpeRate, config.radiation.lethalDose, config.radiation.indoorTransmission,
-                    config.start.elapsedHours, config.start.dose, config.time.speDurationHours);
+                    config.start.elapsedHours, config.start.dose, config.time.speDurationHours,
+                    config.radiation.fitSpeToRemainingDose, config.radiation.speRemainingDoseMultiplier);
             else
                 Run = new SurvivalRun(rules.durationHours, rules.speStartHour, rules.normalRate,
                     rules.speRate, rules.lethalDose, rules.indoorTransmission);

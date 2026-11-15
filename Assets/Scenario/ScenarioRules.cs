@@ -52,12 +52,18 @@ namespace SpaceDilemma.Scenario
     {
         [InspectorName("RadLab 전후 평균 사용")] public bool useRadLabAverages;
         [InspectorName("게임 환산계수 k"), Min(0)]
-        [Tooltip("관측 흡수선량률 × k / 1000을 game mSv/게임시간으로 사용합니다. 인체 유효선량 환산이 아닙니다.")]
+        [Tooltip("관측 평균 × k / 1000으로 기준 선량률을 구합니다. 잔여량 보정 사용 시 SPE 선량률은 사건 순간 별도로 계산합니다. 인체 유효선량 환산이 아닙니다.")]
         public float gameGain = 200;
         [InspectorName("이벤트 전 평균 (μGy/h)"), Min(0)] public double preAverageUGyPerHour;
         [InspectorName("이벤트 후 평균 (μGy/h)"), Min(0)] public double postAverageUGyPerHour;
         [InspectorName("평상시 실외 선량률 (mSv/게임시간)"), Min(0)] public float normalRate = .1f;
         [InspectorName("SPE 실외 선량률 (mSv/게임시간)"), Min(0)] public float speRate = 3;
+        [InspectorName("SPE 시작 시 남은 피폭 한도 보정")]
+        [Tooltip("사건 순간 (위험 기준−누적 선량)/남은 게임시간 × 여유 배율로 실외 SPE 선량률을 한 번 고정합니다. 이후 실내·차폐로 줄어도 재계산하지 않습니다.")]
+        public bool fitSpeToRemainingDose;
+        [InspectorName("SPE 잔여량 보정 여유 배율"), Min(1)]
+        [Tooltip("1이면 계속 실외에 있을 때 임무 종료 순간 100%, 1.1이면 남은 시간의 1/1.1에 한도에 도달합니다. 잔여량 보정이 켜져 있을 때만 사용합니다.")]
+        public float speRemainingDoseMultiplier = 1.1f;
         public double NormalRate => useRadLabAverages ? Rate(preAverageUGyPerHour) : normalRate;
         public double SpeRate => useRadLabAverages ? Rate(postAverageUGyPerHour) : speRate;
         double Rate(double observed) => double.IsFinite(observed) && float.IsFinite(gameGain)

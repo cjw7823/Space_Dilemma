@@ -133,6 +133,28 @@ namespace SpaceDilemma.Survival
                   $"플레이 1초 = 게임시간 {speed:0.####}시간\n" +
                   $"실외에서 1초마다 +{normal * speed:0.0000} → +{spe * speed:0.0000} game mSv\n\n{eventCopy}\n" +
                   "game mSv는 게임용 단위입니다. 환산계수는 게임 난이도에 맞춰 정했습니다.";
+            if (hasSpe && radiation.fitSpeToRemainingDose)
+            {
+                double margin = float.IsFinite(radiation.speRemainingDoseMultiplier)
+                    ? Math.Max(1, radiation.speRemainingDoseMultiplier) : 1;
+                bool endsEarly = time.speDurationHours > 0 && time.speStartHour + time.speDurationHours < time.durationHours;
+                string outdoorCopy = endsEarly
+                    ? (english ? "After SPE ends, the normal rate resumes." : "SPE가 끝나면 평상시 증가율로 돌아갑니다.")
+                    : (english ? (margin > 1 ? "Stay outside → 100% before mission end." : "Stay outside until mission end → 100%.")
+                        : (margin > 1 ? "계속 실외에 있으면 임무 종료 전 100%." : "계속 실외에 있으면 임무 종료 때 100%."));
+                string baseConversion = radiation.useRadLabAverages
+                    ? (english ? $" (observed mean × k ÷ 1,000; k = {radiation.gameGain:0.##})"
+                        : $" (관측 평균 × k ÷ 1,000; k = {radiation.gameGain:0.##})") : "";
+                calculation.text = english
+                    ? $"Before SPE: +{normal * speed:0.0000} game mSv per play second{baseConversion}\n\n" +
+                      $"At {timestamp}, the outdoor rate is fixed once:\nremaining dose limit ÷ remaining game time × {margin:0.##}.\n" +
+                      $"Gameplay margin: +{margin - 1:0%}.\n{outdoorCopy}\nShelter reduces exposure; the rate stays fixed.\n" +
+                      "Game mSv is a gameplay unit."
+                    : $"SPE 전: 실외에서 1초마다 +{normal * speed:0.0000} game mSv{baseConversion}\n\n" +
+                      $"플레이 {timestamp}에 한 번 계산합니다.\n실외 증가율 = 남은 피폭 한도 ÷ 남은 게임시간 × {margin:0.##}\n" +
+                      $"게임 여유: +{margin - 1:0%}.\n{outdoorCopy}\n대피·차폐로 줄어도 증가율은 다시 올리지 않습니다.\n" +
+                      "game mSv는 게임용 단위입니다.";
+            }
             protection.text = english
                 ? $"Inside the base, the dose builds at {indoor:0%} of the outdoor rate. During an SPE, powered shielding reduces that indoor rate by up to {maximumReduction:0%}. " +
                   $"At {limit:0.##} game mSv of total exposure, the mission ends."

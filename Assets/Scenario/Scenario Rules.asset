@@ -25,6 +25,8 @@ MonoBehaviour:
     postAverageUGyPerHour: 65.12366319444443
     normalRate: 0.1
     speRate: 3
+    fitSpeToRemainingDose: 1
+    speRemainingDoseMultiplier: 1.1
     lethalDose: 600
     indoorTransmission: 0.35
     maximumReduction: 0.8

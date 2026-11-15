@@ -9,9 +9,9 @@ Space Dilemma는 달 기지에서 진행하는 짧은 시뮬레이션 게임입�
 ### 방사선과 태양 고에너지 입자 사건
 
 - **NASA CCMC DONKI**의 관측 시각을 기준으로 방사선 자료의 전후 구간을 나눴습니다. 현재 게임의 방사선 모델은 **2022년 8월 27일 11:12 UTC**에 기록된 태양 고에너지 입자 사건(SEP)을 사용합니다. 게임 속 48시간을 실제 플레이 10분으로 압축했으며, 사건은 게임 시간으로 38시간 24분, 실제 플레이로 8분에 시작합니다. [NASA CCMC DONKI](https://ccmc.gsfc.nasa.gov/tools/DONKI/)
-- **NASA RadLab**은 달 정찰 궤도선(LRO)에 실린 CRaTER-D1D2 검출기의 흡수선량률 자료를 제공합니다. 관측값이 얼마나 갖춰졌는지 확인한 뒤 DONKI 기록 전후 각각 48시간의 평균을 구했습니다. Unity는 **사건 전 11.4664 μGy/h**, **사건 후 65.1237 μGy/h**를 실외 피폭 증가율의 기준으로 사용합니다. 두 평균에 게임용 계수 `k = 570`을 곱하고 1,000으로 나눠 게임 시간당 game mSv로 환산합니다. [NASA RadLab Data API](https://visualization.osdr.nasa.gov/radlab/gui/data-api/)
+- **NASA RadLab**은 달 정찰 궤도선(LRO)에 실린 CRaTER-D1D2 검출기의 흡수선량률 자료를 제공합니다. 관측값이 얼마나 갖춰졌는지 확인한 뒤 DONKI 기록 전후 각각 48시간의 평균을 구했습니다. **사건 전 11.4664 μGy/h**, **사건 후 65.1237 μGy/h**로, 관측 증가율은 약 **5.68배**입니다. Unity는 SPE 전 평균에 게임용 계수 `k = 570`을 곱하고 1,000으로 나눠 게임 시간당 game mSv로 환산합니다. [NASA RadLab Data API](https://visualization.osdr.nasa.gov/radlab/gui/data-api/)
 
-Python 분석 도구는 다른 사건 후보를 비교하고, 1분 간격의 추정 시계열을 내보내며, 목표 누적 피폭량에 맞는 게임용 계수를 계산할 수 있습니다. 기본 임무는 전후 평균 두 값을 사용하며, 종료 기준은 **600 game mSv**입니다. 기지 내부에서는 피폭량이 더 느리게 쌓입니다. [방사선 분석 도구 README](MoonData/Radiation_Analyzer/README.md) · [게임 적용 안내](Assets/Survival/RADLAB_CALIBRATION.md)
+SPE 시작 순간의 누적 피폭량 `D`를 기록하고, 실외 SPE 선량률을 `1.1 × (600 − D) / 9.6` game mSv/게임시간으로 한 번 정합니다. 10%의 게임용 여유 배율을 적용해 이후 계속 실외·차폐 없음이면 SPE 시작 **약 109.09초 후**, 플레이 **9분 49.09초**에 **600 game mSv**에 도달합니다. `Scenario Rules`의 방사선 설정에서 `speRemainingDoseMultiplier`를 조절할 수 있으며, 최솟값 1은 임무 종료인 10분에 정확히 도달하는 설정입니다. 실내 대피와 차폐는 이때 정한 선량률에 감소 효과를 적용해 종료 시 누적량을 낮춥니다. 이 게임용 보정으로 실제 적용되는 전후 비율은 관측값의 5.68배와 달라질 수 있습니다. Python 분석 도구에서는 후보 사건을 비교하고 고정 계수에 따른 분석 결과를 생성할 수 있습니다. [방사선 분석 도구 README](MoonData/Radiation_Analyzer/README.md) · [게임 적용 안내](Assets/Survival/RADLAB_CALIBRATION.md)
 
 ### 달 지형과 태양·지구의 위치
 

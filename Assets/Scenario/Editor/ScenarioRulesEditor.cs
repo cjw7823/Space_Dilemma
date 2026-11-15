@@ -75,10 +75,15 @@ sealed class ScenarioRulesEditor : Editor
                 double before=section.FindPropertyRelative(nameof(ScenarioRadiation.preAverageUGyPerHour)).doubleValue*gain/1000;
                 double after=section.FindPropertyRelative(nameof(ScenarioRadiation.postAverageUGyPerHour)).doubleValue*gain/1000;
                 double speed=serializedObject.FindProperty(nameof(ScenarioRules.time)).FindPropertyRelative(nameof(ScenarioTime.gameHoursPerSecond)).floatValue;
-                EditorGUILayout.LabelField("실외 game mSv/게임시간",$"{before:0.0000} → {after:0.0000}");
-                EditorGUILayout.LabelField("실외 game mSv/플레이 초",$"{before*speed:0.0000} → {after*speed:0.0000}");
-                EditorGUILayout.HelpBox("RadLab의 전후 평균을 두 상수 구간으로 적용합니다. k는 두 구간을 함께 확대하며 SPE 시작 시각은 변경하지 않습니다.",MessageType.None);
+                bool fit=section.FindPropertyRelative(nameof(ScenarioRadiation.fitSpeToRemainingDose)).boolValue;
+                EditorGUILayout.LabelField(fit?"SPE 전 game mSv/게임시간":"실외 game mSv/게임시간",fit?$"{before:0.0000}":$"{before:0.0000} → {after:0.0000}");
+                EditorGUILayout.LabelField(fit?"SPE 전 game mSv/플레이 초":"실외 game mSv/플레이 초",fit?$"{before*speed:0.0000}":$"{before*speed:0.0000} → {after*speed:0.0000}");
+                EditorGUILayout.HelpBox(fit
+                    ? "SPE 전에는 관측 평균 × k를 사용합니다. SPE 실외 선량률은 사건 순간의 남은 피폭 한도 ÷ 남은 게임시간 × 여유 배율로 한 번 고정하며 관측 전후 비율과 달라질 수 있습니다."
+                    : "RadLab의 전후 평균을 두 상수 구간으로 적용합니다. k는 두 구간을 함께 확대하며 SPE 시작 시각은 변경하지 않습니다.",MessageType.None);
             }
+            if(section.FindPropertyRelative(nameof(ScenarioRadiation.fitSpeToRemainingDose)).boolValue)
+                EditorGUILayout.HelpBox("여유 배율 1은 종료 순간, 1.1은 남은 시간의 약 91%에 실외 피폭이 100%가 됩니다. 이후 실내·차폐 효과는 유지되고 선량률은 다시 올리지 않습니다. SPE가 일찍 끝나면 평상시 선량률로 돌아갑니다.",MessageType.Info);
         }
     }
 
