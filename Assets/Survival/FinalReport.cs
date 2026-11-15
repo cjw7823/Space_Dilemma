@@ -7,6 +7,10 @@ namespace SpaceDilemma.Results
     public sealed class FinalReport
     {
         readonly double[] percentages=new double[3];
+        readonly bool[] shieldInterrupted=new bool[3];
+        readonly bool[,] abandonedDevices=new bool[3,3];
+        public bool ShieldAbandoned(ResearchMission mission,int device)=>abandonedDevices[(int)mission,device];
+        public bool ShieldInterrupted(ResearchMission mission)=>shieldInterrupted[(int)mission];
         public SurvivalOutcome Outcome { get; }
         public double Hours { get; }
         public double Dose { get; }
@@ -33,6 +37,8 @@ namespace SpaceDilemma.Results
             for(int i=0;i<3;i++)
             {
                 percentages[i]=ResearchWeights.ClampPercent(research.Percent((ResearchMission)i));
+                shieldInterrupted[i]=research.LostResearchToShield((ResearchMission)i);
+                for(int d=0;d<3;d++) abandonedDevices[i,d]=research.Get((ResearchMission)i,d).AbandonedForShield;
                 var sample=research.Get(ResearchMission.Samples,i);
                 if(!sample.Activated) continue;
                 StoredSamples++;

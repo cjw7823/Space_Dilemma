@@ -1,5 +1,6 @@
 using System;
 using SpaceDilemma.Survival;
+using SpaceDilemma.Power;
 using UnityEngine;
 
 namespace SpaceDilemma.Research
@@ -15,9 +16,11 @@ namespace SpaceDilemma.Research
         public ResearchDevice[] Devices => devices;
         public ResearchInteraction Interaction => interaction;
         public event Action Changed;
+        BasePowerController power;
 
         void Start()
         {
+            power=FindFirstObjectByType<BasePowerController>();
             var config = session.Scenario;
             Ledger = config ? new ResearchLedger(config, session.Run.Hours) :
                 new ResearchLedger(rules, session.Run.Hours, preservationRules);
@@ -67,6 +70,8 @@ namespace SpaceDilemma.Research
                 if (device.mission == ResearchMission.Samples)
                     activated &= interaction.StoredSampleBySlot.ContainsKey(device.index);
                 Ledger.SetState(device.mission, device.index, activated, device.powerAvailable, device.researchValid);
+                Ledger.SetShieldAbandoned(device.mission,device.index,
+                    power && power.Budget.Abandoned((int)device.mission,device.index));
             }
             Changed?.Invoke();
         }

@@ -68,8 +68,7 @@ namespace SpaceDilemma.Results
             }
             overallText.text=en?$"Mission completion: {r.OverallPercent:0.0}%":$"임무 완수율: {r.OverallPercent:0.0}%";
             samplesText.text=en?$"Usable stored samples: {r.UsableSamples} / {r.StoredSamples}":$"보관 시료 중 유효 품질: {r.UsableSamples} / {r.StoredSamples}";
-            note.text=survived?(en?"Thanks to you, we gained valuable research data and resources.\nThank you so much!":
-                "당신 덕분에 소중한 연구 자료와 자원을 얻게 되었어요.\n정말 감사합니다!"):
+            note.text=survived?EndingMessage.Survival(r,en):
                 (en?"Radiation exposure reached the limit.\nGame over due to a safety rule violation.":
                 "방사선 피폭량이 제한치에 도달했습니다.\n안전 수칙 위반으로 게임 오버되었습니다.");
             settingsLabel.text=en?"SETTINGS":"설정";

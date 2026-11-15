@@ -31,8 +31,10 @@ namespace SpaceDilemma.Power
             for(int d=0;d<3;d++)
             {
                 switches[d].SetIsOnWithoutNotify(b.RequestedOn(facility,d));
+                switches[d].interactable=!b.Abandoned(facility,d);
                 bool on=b.Powered(facility,d);
-                string status=on?"ON":!b.RequestedOn(facility,d)?"OFF":en?"NO POWER":"전력 부족";
+                string status=b.Abandoned(facility,d)?(en?"FORFEITED":"포기(영구)"):
+                    on?"ON":!b.RequestedOn(facility,d)?"OFF":en?"NO POWER":"전력 부족";
                 deviceLabels[d].text=$"{d+1}: {b.Demand(facility,d):0.#} W  {status}";
                 indicators[d].color=on?new Color32(71,223,153,255):new Color32(227,100,83,255);
             }

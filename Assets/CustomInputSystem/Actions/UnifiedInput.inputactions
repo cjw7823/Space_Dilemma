@@ -54,6 +54,15 @@
           "processors": "",
           "interactions": "",
           "initialStateCheck": false
+        },
+        {
+          "name": "SceneryView",
+          "type": "Button",
+          "id": "e0e7b309-559a-479b-a74d-1429ddfbbe95",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false
         }
       ],
       "bindings": [
@@ -318,6 +327,28 @@
           "processors": "",
           "groups": "",
           "action": "ResearchInteract",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "b12b4a0a-64e6-40f7-a5e4-5f218dbce0ed",
+          "path": "<Keyboard>/l",
+          "interactions": "",
+          "processors": "",
+          "groups": "KeyboardMouse",
+          "action": "SceneryView",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "1ed17444-b95c-403e-a0a2-7ae52d914519",
+          "path": "<Gamepad>/rightStickPress",
+          "interactions": "",
+          "processors": "",
+          "groups": "",
+          "action": "SceneryView",
           "isComposite": false,
           "isPartOfComposite": false
         }
@@ -1694,6 +1725,86 @@
           "interactions": "",
           "groups": "",
           "action": "SecondaryValue",
+          "isComposite": false,
+          "isPartOfComposite": false
+        }
+      ]
+    },
+    {
+      "name": "Scenery",
+      "id": "ee5e342f-3060-434d-9af1-33db1a00f8a7",
+      "actions": [
+        {
+          "name": "Look",
+          "type": "Value",
+          "id": "1daaadfa-e64f-4aba-b885-7159c4157cc2",
+          "expectedControlType": "Vector2",
+          "processors": "",
+          "interactions": ""
+        },
+        {
+          "name": "SceneryView",
+          "type": "Button",
+          "id": "e8c65d5d-211c-4e9f-8ee4-f38e2a7431cb",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false
+        }
+      ],
+      "bindings": [
+        {
+          "name": "",
+          "id": "905254c0-60f4-419d-a59b-040da99348b6",
+          "path": "<Pointer>/delta",
+          "interactions": "",
+          "processors": "InvertVector2(invertX=false),ScaleVector2(x=0.05,y=0.05)",
+          "groups": "KeyboardMouse",
+          "action": "Look",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "cbed870e-8f04-4e8f-bfd6-475de2a1cd27",
+          "path": "<Gamepad>/rightStick",
+          "interactions": "",
+          "processors": "InvertVector2(invertX=false),StickDeadzone",
+          "groups": "Gamepad",
+          "action": "Look",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "e364c451-d987-40f7-9b8b-1da208d54f05",
+          "path": "<SerialController>/joystick2",
+          "processors": "InvertVector2(invertX=false)",
+          "interactions": "",
+          "groups": "",
+          "action": "Look",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "f5246ff2-d5df-4042-89b6-531291abdadb",
+          "path": "<Keyboard>/l",
+          "interactions": "",
+          "processors": "",
+          "groups": "KeyboardMouse",
+          "action": "SceneryView",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "21c2c207-0d92-41e5-bd24-0ee679a8d858",
+          "path": "<Gamepad>/rightStickPress",
+          "interactions": "",
+          "processors": "",
+          "groups": "",
+          "action": "SceneryView",
           "isComposite": false,
           "isPartOfComposite": false
         }

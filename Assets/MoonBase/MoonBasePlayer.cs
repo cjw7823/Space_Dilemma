@@ -12,10 +12,12 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
 {
     public CinemachineCamera thirdPersonCamera;
     public MoonRover rover;
+    public MoonSceneryView sceneryView;
     [Range(.02f,3f)] public float mouseSensitivity=.12f;
     public bool showControls=true;
     public bool ControlCaptured { get; private set; }
     public bool IsDriving { get; private set; }
+    public bool IsObservingScenery => sceneryView && sceneryView.IsActive;
     public bool ExitBlocked => exitBlocked;
     ThirdPersonController motor;
     StarterAssetsInputs input;
@@ -109,6 +111,17 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
         bool overUi = EventSystem.current && EventSystem.current.IsPointerOverGameObject();
         if(!released && focused && !ControlCaptured && !overUi && mouse!=null && mouse.leftButton.wasPressedThisFrame)
             SetControlCaptured(true);
+
+        if (IsObservingScenery)
+        {
+            ClearInput();
+            if (IsDriving && rover)
+            {
+                rover.Stop();
+                transform.SetPositionAndRotation(rover.driverSeat.position, rover.transform.rotation);
+            }
+            return;
+        }
 
         // Read the live PlayerInput action copy every frame, including releases.
         // Events alone can leave stale movement after focus changes or held jumps after landing.

@@ -53,6 +53,8 @@ namespace SpaceDilemma.Research
 
         string NearbyAction()
         {
+            if (player && player.IsObservingScenery)
+                return Text("Scenery | L / R3: return", "경치 보기 | L / R3: 복귀");
             if (player && player.ControlCaptured && InputHub.Active && InputHub.Active.GameplayAllowed)
             {
                 if (player.IsDriving && player.ExitBlocked)

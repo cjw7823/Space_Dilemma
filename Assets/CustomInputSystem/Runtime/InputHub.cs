@@ -227,7 +227,8 @@ namespace SpaceDilemma.CustomInput
             string path = context.action.actionMap.name + "/" + context.action.name;
             if (context.performed && context.action.type == InputActionType.Button) pressed.Add(path);
             if (context.action.type == InputActionType.PassThrough && context.valueType == typeof(float)) scalarValues[path] = context.ReadValue<float>();
-            if (context.performed && context.action.actionMap.name == "Player" && (context.control.device is Gamepad || context.control.device is SerialController))
+            if (context.performed && CurrentContext && !CurrentContext.blocksGameplay &&
+                context.action.actionMap.name == CurrentContext.actionMap && (context.control.device is Gamepad || context.control.device is SerialController))
                 NonPointerGameplayActivity = true;
             if (context.performed && context.action.name == "ToggleUI") commands.Enqueue(() => GetComponent<CustomInputDemoPanel>()?.ToggleMenu());
             ActionTriggered?.Invoke(new ActionSignal(context));

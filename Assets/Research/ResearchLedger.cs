@@ -12,6 +12,7 @@ namespace SpaceDilemma.Research
         public bool Running => Activated && Powered && Valid && (Preservation?.Usable ?? true);
         public double Data { get; internal set; }
         public double ValidGameHours { get; internal set; }
+        public bool AbandonedForShield { get; internal set; }
     }
 
     // Uses absolute session time so repeated callbacks cannot duplicate accumulated data.
@@ -56,6 +57,25 @@ namespace SpaceDilemma.Research
         }
 
         public ResearchDataState Get(ResearchMission mission, int index) => states[(int)mission, index];
+        public void SetShieldAbandoned(ResearchMission mission,int index,bool value)
+        {
+            if(IsFinished || !value) return;
+            var state=Get(mission,index);
+            state.AbandonedForShield=true;
+            state.Powered=false;
+        }
+        public bool IsComplete(ResearchMission mission) => Percent(mission)>=maximumPercent[(int)mission]-1e-6;
+        public bool LostResearchToShield(ResearchMission mission)
+        {
+            if(IsComplete(mission)) return false;
+            for(int i=0;i<3;i++)
+            {
+                var state=Get(mission,i);
+                if(weights[(int)mission,i]>0 && state.AbandonedForShield && state.Data<capacities[(int)mission,i]-1e-9)
+                    return true;
+            }
+            return false;
+        }
 
         internal void SetInitialData(ResearchMission mission, int index, double data, double sampleQuality)
         {
@@ -69,6 +89,7 @@ namespace SpaceDilemma.Research
         {
             if (IsFinished) return;
             var state = Get(mission, index);
+            powered &= !state.AbandonedForShield;
             if (state.Activated == activated && state.Powered == powered && state.Valid == valid) return;
             state.Activated = activated;
             state.Powered = powered;

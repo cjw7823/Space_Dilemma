@@ -13,6 +13,7 @@ namespace SpaceDilemma.Power
         readonly int[] facilityOrder;
         readonly double[] requested = new double[3], supplied = new double[3];
         readonly bool[,] enabled = new bool[3,3], powered = new bool[3,3];
+        readonly bool[,] abandoned = new bool[3,3];
         public double Available { get; }
         public double EssentialRequired { get; }
         public double EssentialSupplied { get; private set; }
@@ -64,9 +65,48 @@ namespace SpaceDilemma.Power
         public double Supplied(int facility) => supplied[facility];
         public bool RequestedOn(int facility,int device) => enabled[facility,device];
         public bool Powered(int facility,int device) => powered[facility,device];
+        public bool Abandoned(int facility,int device) => abandoned[facility,device];
+        public void LockShieldSacrifices(ShieldPowerTradeoff history)
+        {
+            for(int m=0;m<3;m++)for(int d=0;d<3;d++)
+                if(history.Interrupted(m,d)) { abandoned[m,d]=true; enabled[m,d]=false; }
+            Recalculate();
+        }
+        // A separate calculation for result attribution; never changes the live budget.
+        internal PowerBudget CopyWithoutShield()
+        {
+            return new PowerBudget(this);
+        }
+        PowerBudget(PowerBudget source)
+        {
+            Available=source.Available; EssentialRequired=source.EssentialRequired; ShieldMaximum=source.ShieldMaximum;
+            facilityOrder=source.facilityOrder;
+            Array.Copy(source.demands,demands,demands.Length);
+            for(int f=0;f<3;f++) deviceOrder[f]=source.deviceOrder[f];
+            CopyRequestsFrom(source);
+        }
+        internal void CopyRequestsFrom(PowerBudget source)
+        {
+            Array.Copy(source.requested,requested,requested.Length);
+            Array.Copy(source.enabled,enabled,enabled.Length);
+            ShieldRequestedOutput=0;
+            Recalculate();
+        }
         public int Running(int facility) => Enumerable.Range(0,3).Count(d=>powered[facility,d]);
-        public void SetAllocation(int facility,double watts) { requested[facility]=Math.Min(Maximum(facility),Nonnegative(watts)); Recalculate(); }
-        public void SetDevice(int facility,int device,bool on) { enabled[facility,device]=on; Recalculate(); }
+        public void SetAllocation(int facility,double watts,bool irreversible=false)
+        {
+            bool[] wasPowered=irreversible?Enumerable.Range(0,3).Select(d=>powered[facility,d]).ToArray():null;
+            requested[facility]=Math.Min(Maximum(facility),Nonnegative(watts));Recalculate();
+            if(!irreversible)return;
+            for(int d=0;d<3;d++)if(wasPowered[d]&&!powered[facility,d])
+            {abandoned[facility,d]=true;enabled[facility,d]=false;}
+            Recalculate();
+        }
+        public void SetDevice(int facility,int device,bool on,bool irreversible=false)
+        {
+            if(irreversible&&!on)abandoned[facility,device]=true;
+            enabled[facility,device]=on && !abandoned[facility,device];Recalculate();
+        }
         public void SetShield(double output) { ShieldRequestedOutput=Math.Min(1,Nonnegative(output)); Recalculate(); }
         public void Recalculate()
         {
@@ -81,7 +121,7 @@ namespace SpaceDilemma.Power
                 double budget=Math.Min(requested[f],remaining);
                 foreach(int d in deviceOrder[f])
                 {
-                    if(!enabled[f,d]) continue;
+                    if(!enabled[f,d] || abandoned[f,d]) continue;
                     // Strict priority: don't supply a lower-priority device ahead of a blocked one.
                     if(demands[f,d]>budget) break;
                     powered[f,d]=true;

@@ -34,7 +34,7 @@ namespace SpaceDilemma.Power
 
         public bool CanReach()
         {
-            if (!console || !player || player.IsDriving) return false;
+            if (!console || !player || player.IsDriving || player.IsObservingScenery) return false;
             var config = session.Scenario;
             bool inside = config ? session.ContainsPlayer() : session.Contains(player.transform.position + Vector3.up);
             if (!inside) return false;

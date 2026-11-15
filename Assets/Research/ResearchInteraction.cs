@@ -63,7 +63,12 @@ namespace SpaceDilemma.Research
         {
             Physics.SyncTransforms();
             foreach (var target in targets)
-                if (target && target.isActiveAndEnabled && target.kind == ResearchKind.Sample) target.PlaceOnGround();
+            {
+                if(!target || !target.isActiveAndEnabled)continue;
+                if(target.kind==ResearchKind.Sample)target.PlaceOnGround();
+                if(target.kind==ResearchKind.Instrument && target.TryGetComponent<InstrumentInstallation>(out var installation))
+                { installation.PlaceOnGround();installation.SetInstalled(IsComplete(target)); }
+            }
         }
 
         ResearchTarget FindTarget(ResearchKind kind, int index) =>
@@ -79,6 +84,8 @@ namespace SpaceDilemma.Research
         {
             completed.Add(target);
             if (target.kind == ResearchKind.Sample) target.gameObject.SetActive(false);
+            if (target.kind == ResearchKind.Instrument && target.TryGetComponent<InstrumentInstallation>(out var installation))
+                installation.SetInstalled(true);
         }
 
         void Update()
@@ -87,7 +94,7 @@ namespace SpaceDilemma.Research
             bool pressed = input && input.IsPressed("ResearchInteract");
             if (!pressed) NeedsRelease = false;
             bool usable = input && input.GameplayAllowed && input.player.gameObject == player.gameObject &&
-                !player.IsDriving && player.ControlCaptured && !session.IsPaused &&
+                !player.IsDriving && !player.IsObservingScenery && player.ControlCaptured && !session.IsPaused &&
                 session.Run.Outcome == SurvivalOutcome.Running;
             Nearby = usable ? FindNearby() : null;
             if (previous != Nearby)
