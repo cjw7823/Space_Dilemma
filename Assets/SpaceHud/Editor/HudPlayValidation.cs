@@ -40,6 +40,12 @@ static class HudPlayValidation
     static bool savedInputSettings, savedBackgroundRun, originalBackgroundRun;
 
     static HudPlayValidation() { EditorApplication.update += Update; }
+
+    internal static void EnterGameplay()
+    {
+        if (HudController.Active) HudController.Active.Pause.StartMission();
+        UnityEngine.Object.FindFirstObjectByType<RadiationBriefing>()?.Close();
+    }
     [MenuItem("Tools/Space HUD/Run Result Survival Validation")]
     public static void ResultSurvival() => RunResults(false);
     [MenuItem("Tools/Space HUD/Run Result Death Validation")]
@@ -120,6 +126,7 @@ static class HudPlayValidation
     {
         originalBackgroundRun = Application.runInBackground; savedBackgroundRun = true; Application.runInBackground = true;
         yield return Wait(.6f);
+        HudPlayValidation.EnterGameplay();
         var hud = HudController.Active; var hub = InputHub.Active;
         var player = UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();
         validationPlayer = player;
@@ -153,7 +160,7 @@ static class HudPlayValidation
         Check(SessionState.GetBool("SpaceHud.Authored", false) && hud && hub && player && environment, "HUD already exists in SampleScene before Play; existing player, input and common clock available");
         if (!hud || !hub || !player || !environment || !hud.Minimap || !hud.Pause) yield break;
         Check(hub.Serial.Status == SerialConnectionStatus.Disconnected, "Validation does not open or reset the configured COM device");
-        var board = hud.Canvas.transform.Find("Mission Board");
+        var board = hud.Canvas.transform.Find("Gameplay HUD/Mission Board");
         Check(board && hud.ObjectiveTitle.transform.IsChildOf(board) && board.Find("Progress Track") &&
             board.Find("Power Interaction Prompt"), "One authored Mission Board owns objective and interaction displays");
         Check(new[] { hud.ObjectiveTitle.Text, hud.ObjectiveDescription.Text, hud.ObjectiveProgress.Text }.All(label =>
@@ -282,9 +289,9 @@ static class HudPlayValidation
         var evaluation = survival.GetComponent<FinalEvaluation>();
         double researchPercent = evaluation.Weights.OverallPercent(evaluation.research.Ledger);
         double radiationPercent = Math.Clamp(survival.Run.Dose / survival.Run.DoseLimit * 100, 0, 100);
-        Check(GaugeMatches(hud.Canvas.transform.Find("Research Gauge"), "Research Percent", researchPercent),
+        Check(GaugeMatches(hud.Canvas.transform.Find("Gameplay HUD/Research Gauge"), "Research Percent", researchPercent),
             "Blue vertical gauge and percent reflect the weighted research ledger");
-        Check(GaugeMatches(hud.Canvas.transform.Find("Radiation Gauge"), "Radiation Percent", radiationPercent),
+        Check(GaugeMatches(hud.Canvas.transform.Find("Gameplay HUD/Radiation Gauge"), "Radiation Percent", radiationPercent),
             "Red vertical gauge and percent reflect current dose relative to the configured danger limit");
         Capture(hud, 1280, 720, "research-data-1280.png");
         Capture(hud, 1920, 1080, "research-data-1920.png");
@@ -332,12 +339,13 @@ static class HudPlayValidation
         var menu = hud.Pause.Popup.GetComponentInChildren<HudGameSettings>(true);
         var pauseWindow = hud.Pause.Popup.transform.Find("Pause Window");
         var settingsButton = pauseWindow.Find("Settings Button")?.GetComponent<Button>();
-        var quitButton = pauseWindow.Find("Quit Game Button")?.GetComponent<Button>();
-        Check(menu && settingsButton && quitButton, "Settings and Quit Game are authored in SampleScene");
-        if (!menu || !settingsButton || !quitButton) yield break;
-        Check(quitButton.interactable && Enumerable.Range(0, quitButton.onClick.GetPersistentEventCount()).Any(i =>
-            quitButton.onClick.GetPersistentTarget(i) == hud.Pause &&
-            quitButton.onClick.GetPersistentMethodName(i) == nameof(HudPauseManager.QuitGame)), "Quit Game is enabled and wired to the quit action");
+        var mainMenuButton = pauseWindow.Find("Main Menu Button")?.GetComponent<Button>();
+        Check(menu && settingsButton && mainMenuButton, "Settings and Main Menu are authored in SampleScene");
+        if (!menu || !settingsButton || !mainMenuButton) yield break;
+        Check(mainMenuButton.interactable && Enumerable.Range(0, mainMenuButton.onClick.GetPersistentEventCount()).Any(i =>
+            mainMenuButton.onClick.GetPersistentTarget(i) == hud.Pause &&
+            mainMenuButton.onClick.GetPersistentMethodName(i) == nameof(HudPauseManager.ReturnToMainMenu)),
+            "Main Menu is wired to return to the title screen");
         hud.Pause.Pause();
         yield return Wait(.2f);
         Click(settingsButton);
@@ -381,14 +389,14 @@ static class HudPlayValidation
             Capture(hud, 1280, 720, "settings-ko-1280.png");
             hud.Pause.BackFromSettings();
             Check(settingsButton.GetComponent<PixelButton>().text == "설정" &&
-                quitButton.GetComponent<PixelButton>().text == "게임 종료" &&
+                mainMenuButton.GetComponent<PixelButton>().text == "메인 화면" &&
                 hud.ContinueButton.text == "계속하기", "Korean reaches the visible pause menu actions");
             hud.Pause.ShowSettings();
             Click(menu.transform.Find("Disconnect").GetComponent<Button>());
             Check(hub.Serial.Status == SerialConnectionStatus.Disconnected, "Disconnect control releases the serial source");
             hub.Serial.Diagnostics.lastError = "@fault: 액세스가 거부되었습니다.";
             Click(menu.transform.Find("English").GetComponent<Button>());
-            Check(menu.English && quitButton.GetComponent<PixelButton>().text == "QUIT GAME", "English updates pause and settings text");
+            Check(menu.English && mainMenuButton.GetComponent<PixelButton>().text == "MAIN MENU", "English updates pause and settings text");
             yield return Wait(.15f);
             Check(diagnostics.text.Contains("Could not open or read the COM port"), "English translates a locally worded Windows COM fault");
             CheckEnglishUi(hud, "switching Korean to English with a localized COM error");

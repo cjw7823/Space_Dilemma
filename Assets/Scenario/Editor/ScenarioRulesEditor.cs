@@ -27,7 +27,8 @@ sealed class ScenarioRulesEditor : Editor
         serializedObject.Update();
         EditorGUILayout.HelpBox("수정값은 다음 Play부터 적용됩니다. 시간·전력·선량은 게임 밸런스 수치입니다.", MessageType.Info);
         DrawSection(nameof(ScenarioRules.time));
-        DrawSection(nameof(ScenarioRules.radiation));
+        DrawRealTime();
+        DrawRadiation();
         DrawSection(nameof(ScenarioRules.interaction));
         DrawSection(nameof(ScenarioRules.power));
         DrawSection(nameof(ScenarioRules.preservation));
@@ -43,6 +44,42 @@ sealed class ScenarioRulesEditor : Editor
         if ((first != StartingSample.None && (first == second || first == third)) ||
             (second != StartingSample.None && second == third))
             EditorGUILayout.HelpBox("같은 시료는 번호가 가장 작은 보관소 한 곳에 배정됩니다.", MessageType.Warning);
+    }
+
+    void DrawRealTime()
+    {
+        var time=serializedObject.FindProperty(nameof(ScenarioRules.time));
+        double speed=Math.Max(.0001,time.FindPropertyRelative(nameof(ScenarioTime.gameHoursPerSecond)).floatValue);
+        string RealTime(double hours){long seconds=(long)Math.Round(Math.Max(0,hours)/speed);return $"{seconds/60}분 {seconds%60:00}초";}
+        EditorGUILayout.LabelField("실제 플레이 기준 (일시정지 제외)","전체 "+RealTime(time.FindPropertyRelative(nameof(ScenarioTime.durationHours)).floatValue)+
+            " / SPE "+RealTime(time.FindPropertyRelative(nameof(ScenarioTime.speStartHour)).floatValue));
+    }
+    void DrawRadiation()
+    {
+        var section=serializedObject.FindProperty(nameof(ScenarioRules.radiation));
+        section.isExpanded=EditorGUILayout.Foldout(section.isExpanded,"방사선과 차폐",true);if(!section.isExpanded)return;
+        using(new EditorGUI.IndentLevelScope())
+        {
+            var use=section.FindPropertyRelative(nameof(ScenarioRadiation.useRadLabAverages));EditorGUILayout.PropertyField(use,Label(typeof(ScenarioRadiation).GetField(nameof(ScenarioRadiation.useRadLabAverages))));
+            foreach(var field in typeof(ScenarioRadiation).GetFields(BindingFlags.Instance|BindingFlags.Public))
+            {
+                if(field.Name==nameof(ScenarioRadiation.useRadLabAverages))continue;
+                bool data=field.Name==nameof(ScenarioRadiation.gameGain)||field.Name==nameof(ScenarioRadiation.preAverageUGyPerHour)||field.Name==nameof(ScenarioRadiation.postAverageUGyPerHour);
+                bool manual=field.Name==nameof(ScenarioRadiation.normalRate)||field.Name==nameof(ScenarioRadiation.speRate);
+                if((data&&!use.boolValue)||(manual&&use.boolValue))continue;
+                EditorGUILayout.PropertyField(section.FindPropertyRelative(field.Name),Label(field));
+            }
+            if(use.boolValue)
+            {
+                double gain=section.FindPropertyRelative(nameof(ScenarioRadiation.gameGain)).floatValue;
+                double before=section.FindPropertyRelative(nameof(ScenarioRadiation.preAverageUGyPerHour)).doubleValue*gain/1000;
+                double after=section.FindPropertyRelative(nameof(ScenarioRadiation.postAverageUGyPerHour)).doubleValue*gain/1000;
+                double speed=serializedObject.FindProperty(nameof(ScenarioRules.time)).FindPropertyRelative(nameof(ScenarioTime.gameHoursPerSecond)).floatValue;
+                EditorGUILayout.LabelField("실외 game mSv/게임시간",$"{before:0.0000} → {after:0.0000}");
+                EditorGUILayout.LabelField("실외 game mSv/플레이 초",$"{before*speed:0.0000} → {after*speed:0.0000}");
+                EditorGUILayout.HelpBox("RadLab의 전후 평균을 두 상수 구간으로 적용합니다. k는 두 구간을 함께 확대하며 SPE 시작 시각은 변경하지 않습니다.",MessageType.None);
+            }
+        }
     }
 
     void DrawSection(string field)

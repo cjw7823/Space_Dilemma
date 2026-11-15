@@ -58,6 +58,7 @@ static class PlantIntroductionChecks
     {
         background=Application.runInBackground;Application.runInBackground=true;
         yield return Frames(8);
+        HudPlayValidation.EnterGameplay();
         var ui=UnityEngine.Object.FindFirstObjectByType<SampleCollectionPopup>();var hub=InputHub.Active;
         player=UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();
         inputBackground=InputSystem.settings.backgroundBehavior;editorInput=InputSystem.settings.editorInputBehaviorInPlayMode;

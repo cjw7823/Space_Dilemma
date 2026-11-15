@@ -81,11 +81,100 @@ static class SceneryViewChecks
             Check(File.Exists(path)&&new FileInfo(path).Length>30000,"Actual Game view capture: "+name+" "+width);
         }
     }
+
+    static IEnumerator CheckSerialKnob(InputHub hub, HudController hud)
+    {
+        var serial = hub.Serial;
+        var rover = player.rover;
+        var demo = hub.GetComponent<CustomInputDemoPanel>();
+        var origin = rover.transform.position;
+        int sequence = 0;
+        void Knob(int value, int move = 500, int buttons = 0) =>
+            serial.InjectLine($"S,{sequence++},{value},0,500,{move},500,500,{buttons}");
+
+        Knob(300);
+        yield return Frames(4);
+        Check(!view.IsActive, "A knob already above the threshold on connection does not open scenery");
+        Knob(0);
+        yield return Frames(3);
+        Knob(9);
+        yield return Frames(3);
+        Check(!view.IsActive, "Serial K below 10 leaves gameplay active");
+        Knob(10);
+        yield return Wait(1.2f);
+        var low = view.ViewPosition;
+        Check(view.IsActive && player.IsDriving && hub.CurrentContext == view.inputContext &&
+            !view.gameplayHud.activeSelf && low.y >= origin.y + 10 - .01f,
+            "Serial K=10 opens HUD-free rover scenery at the lowest clear height");
+
+        Knob(505, 1000, 2);
+        yield return Frames(6);
+        var midpoint = view.ViewPosition;
+        Check(player.IsDriving && Horizontal(rover.transform.position, origin) < .02f && !demo.IsVisible,
+            "Vehicle movement and the Serial example-menu button cannot interrupt scenery");
+        Knob(1000);
+        yield return Frames(6);
+        var high = view.ViewPosition;
+        Check(high.y > low.y && Horizontal(low, high) < .01f &&
+            Mathf.Abs(midpoint.y - (low.y + high.y) * .5f) < .02f,
+            "Serial K=505 gives the exact midpoint of a vertical 10–1000 interpolation");
+        yield return Capture("serial-knob-top");
+
+        hud.Pause.Pause();
+        yield return Frames(3);
+        Knob(250);
+        yield return Frames(5);
+        Check(hud.Pause.IsPaused && view.ViewPosition == high, "Pausing also pauses knob height changes");
+        hud.Pause.Resume();
+        yield return Frames(5);
+        Check(Mathf.Abs(view.ViewPosition.y - Mathf.Lerp(low.y, high.y, 240f / 990f)) < .02f,
+            "Closing pause applies the current knob height");
+
+        Keys(Key.L);
+        yield return Frames(4);
+        Keys();
+        Knob(1000);
+        yield return Frames(4);
+        Check(!view.IsActive && view.gameplayHud.activeSelf,
+            "L exits knob scenery and turning farther above 10 does not reopen it");
+        Stick(Vector2.zero, true);
+        yield return Frames(4);
+        Stick(Vector2.zero);
+        yield return Frames(3);
+        Check(view.IsActive && Vector3.Distance(view.ViewPosition, high) < .02f,
+            "R3 enters at the very same top height as Serial K=1000");
+        var buttonView = view.ViewPosition;
+        Knob(0);
+        yield return Frames(4);
+        Check(view.IsActive && view.ViewPosition == buttonView,
+            "Lowering the knob does not change scenery entered with a button");
+        Stick(Vector2.zero, true);
+        yield return Frames(4);
+        Stick(Vector2.zero);
+        yield return Frames(3);
+        Knob(10);
+        yield return Frames(4);
+        Knob(9);
+        yield return Frames(5);
+        Check(!view.IsActive && player.IsDriving && view.gameplayHud.activeSelf &&
+            hub.CurrentContext == hub.settings.gameplay, "K below 10 exits knob scenery and restores the occupied rover view and HUD");
+
+        Knob(600);
+        yield return Frames(4);
+        Check(view.IsActive, "Raising the knob through the threshold again reopens scenery");
+        serial.Disconnect();
+        yield return Frames(4);
+        Check(!view.IsActive && view.gameplayHud.activeSelf,
+            "Losing the Serial sample exits knob scenery and restores the HUD");
+    }
+
     static IEnumerator Cases()
     {
         background=Application.runInBackground;Application.runInBackground=true;yield return Frames(8);
+        HudPlayValidation.EnterGameplay();
         player=UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();view=player.sceneryView;
         var hub=InputHub.Active;var session=UnityEngine.Object.FindFirstObjectByType<SurvivalSession>();
+        hub.Serial.BeginSimulation();
         var hud=UnityEngine.Object.FindFirstObjectByType<HudController>();var research=UnityEngine.Object.FindFirstObjectByType<ResearchInteraction>();
         var panel=UnityEngine.Object.FindFirstObjectByType<PowerPanel>();var brain=Camera.main.GetComponent<CinemachineBrain>();
         var motor=player.GetComponent<ThirdPersonController>();var cc=player.GetComponent<CharacterController>();
@@ -103,10 +192,15 @@ static class SceneryViewChecks
         Check(hub.Actions.FindAction("Player/SceneryView").bindings.Any(b=>b.path=="<Keyboard>/l") &&
             hub.Actions.FindAction("Player/SceneryView").bindings.Any(b=>b.path=="<Gamepad>/rightStickPress"),"L and gamepad right-stick click bind to the same logical action");
         Vector3 position=player.transform.position;
-        Keys(Key.L);yield return Frames(4);Keys();yield return Wait(1.2f);
+        Keys(Key.L);yield return Frames(4);Keys();
+        float blendDeadline = Time.realtimeSinceStartup + 6f;
+        while ((brain.IsBlending || !ReferenceEquals(brain.ActiveVirtualCamera, view.sceneryCamera)) &&
+            Time.realtimeSinceStartup < blendDeadline)
+            yield return null;
         Check(view.IsActive && !player.IsDriving && hub.CurrentContext==view.inputContext,"Keyboard L enters scenery view while walking indoors");
         Check(view.ViewPosition.y>=position.y+view.height-.01f,"Scenery viewpoint rises to configured height despite the real base roof");
-        Check(Vector3.Distance(Camera.main.transform.position,view.ViewPosition)<.1f,"Cinemachine completes the upward blend to the elevated camera");
+        Check(!brain.IsBlending && Vector3.Distance(Camera.main.transform.position,view.ViewPosition)<.1f,
+            "Cinemachine completes the upward blend to the elevated camera");
         Check(view.sceneryCamera.GetComponent<CinemachineThirdPersonFollow>()==null && view.sceneryCamera.Follow==null,"Elevated camera has no third-person collision solver or follow target");
         var cameraPosition=view.ViewPosition;float yaw=view.Yaw;float xAngle=Camera.main.transform.eulerAngles.x;
         MouseDelta(0,800);Keys(Key.W,Key.Space,Key.LeftShift,Key.T,Key.E);yield return Frames(6);
@@ -116,8 +210,9 @@ static class SceneryViewChecks
         MouseDelta(500,500);yield return Frames(4);Keys();
         Check(Mathf.Abs(Mathf.DeltaAngle(yaw,view.Yaw))>.1f && Mathf.Abs(Mathf.DeltaAngle(view.pitch,Camera.main.transform.eulerAngles.x))<.05f,"Horizontal mouse input rotates only world Y while mixed vertical input is ignored");
         Check(Mathf.Abs(Mathf.DeltaAngle(Camera.main.transform.eulerAngles.z,0))<.05f && Vector3.Distance(Camera.main.transform.position,cameraPosition)<.1f,"Yaw rotation keeps camera roll and elevated position fixed");
-        var prompt=(TMPro.TMP_Text)new SerializedObject(UnityEngine.Object.FindFirstObjectByType<ResearchHud>()).FindProperty("prompt").objectReferenceValue;
-        prompt.ForceMeshUpdate();Check(prompt.text.Contains("L / R3") && prompt.preferredHeight<=prompt.rectTransform.rect.height+1,"Mission Board shows fitting scenery controls instead of a blocked interaction hint");
+        var researchHud = UnityEngine.Object.FindFirstObjectByType<ResearchHud>(FindObjectsInactive.Include);
+        var prompt = (TMPro.TMP_Text)new SerializedObject(researchHud).FindProperty("prompt").objectReferenceValue;
+        Check(!prompt.gameObject.activeInHierarchy && view.gameplayHud && !view.gameplayHud.activeSelf,"Scenery hides the Mission Board and all gameplay HUD");
         double hours=session.Run.Hours;yield return Wait(.2f);Check(session.Run.Hours>hours && Time.timeScale==1,"Scenery mode leaves game time running");
         yield return Capture("walking-scenery");
         Keys(Key.Escape);yield return Frames(5);Keys();yield return Frames(4);
@@ -162,6 +257,7 @@ static class SceneryViewChecks
             view.enabled=true;
         }
         finally{UnityEngine.Object.DestroyImmediate(roof);}
+        yield return CheckSerialKnob(hub, hud);
         Keys();yield return Frames(5);Keys(Key.L);yield return Frames(4);Keys();
         var shield=UnityEngine.Object.FindFirstObjectByType<ActiveRadiationShield>();
         session.Run.Advance(100,true,shield);yield return Frames(5);

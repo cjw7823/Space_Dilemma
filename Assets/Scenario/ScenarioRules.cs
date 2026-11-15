@@ -50,8 +50,18 @@ namespace SpaceDilemma.Scenario
     [Serializable]
     public sealed class ScenarioRadiation
     {
+        [InspectorName("RadLab 전후 평균 사용")] public bool useRadLabAverages;
+        [InspectorName("게임 환산계수 k"), Min(0)]
+        [Tooltip("관측 흡수선량률 × k / 1000을 game mSv/게임시간으로 사용합니다. 인체 유효선량 환산이 아닙니다.")]
+        public float gameGain = 200;
+        [InspectorName("이벤트 전 평균 (μGy/h)"), Min(0)] public double preAverageUGyPerHour;
+        [InspectorName("이벤트 후 평균 (μGy/h)"), Min(0)] public double postAverageUGyPerHour;
         [InspectorName("평상시 실외 선량률 (mSv/게임시간)"), Min(0)] public float normalRate = .1f;
         [InspectorName("SPE 실외 선량률 (mSv/게임시간)"), Min(0)] public float speRate = 3;
+        public double NormalRate => useRadLabAverages ? Rate(preAverageUGyPerHour) : normalRate;
+        public double SpeRate => useRadLabAverages ? Rate(postAverageUGyPerHour) : speRate;
+        double Rate(double observed) => double.IsFinite(observed) && float.IsFinite(gameGain)
+            ? Math.Max(0, observed) * Math.Max(0, gameGain) / 1000 : 0;
         [InspectorName("위험 기준 (mSv)"), Min(.001f)]
         [Tooltip("누적 선량이 이 값에 도달하면 사망합니다. 피폭도 게이지의 100% 기준입니다.")]
         public float lethalDose = 50;

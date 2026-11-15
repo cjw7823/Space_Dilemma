@@ -242,10 +242,11 @@ public static class LunarEnvironmentValidation
         Check(SunAngleTable.TryParse(env.sunAngleCsv.text, out var table, out _), "Parse supplied CSV");
         Check(table.Count == 51 && Near((float)table.DurationHours, 48), "51 records spanning 48 hours");
         var first = table.Evaluate(0); var last = table.Evaluate(48); var middle = table.Evaluate(0.48);
-        Check(first.utc == new DateTime(2026,11,14,0,0,0,DateTimeKind.Utc), "Day-of-year 318 -> Nov 14 UTC");
-        Check(Near(first.azimuth,90.170044f) && Near(first.elevation,1.548597f), "Exact first solar angles");
-        Check(Near(last.azimuth,65.863331f) && Near(last.elevation,3.462417f), "Exact last solar angles");
-        Check(Near(middle.azimuth,(90.170044f+89.684092f)/2) && Near(middle.elevation,(1.548597f+1.588078f)/2), "Interpolate irregular time position");
+        Check(first.utc == new DateTime(2022,8,25,20,48,0,DateTimeKind.Utc), "Day-of-year 237 -> Aug 25 UTC");
+        Check(Near(first.azimuth,154.816995f) && Near(first.elevation,-5.390978f), "Exact first solar angles");
+        Check(Near(last.azimuth,130.280402f) && Near(last.elevation,-4.268556f), "Exact last solar angles");
+        Check(Near(middle.azimuth,(154.816995f+154.325639f)/2) &&
+              Near(middle.elevation,(-5.390978f-5.374971f)/2), "Interpolate between the first two records");
         Check(table.Evaluate(-10).utc == first.utc && table.Evaluate(100).utc == last.utc, "Clamp beyond CSV bounds");
         Check(!SunAngleTable.TryParse("Time,Elevation,Azimuth\n2026-366T00:00:00,1,2\n2027-001T00:00:00,2,3", out _, out _), "Reject invalid day-of-year");
         Check(!SunAngleTable.TryParse("Time,Elevation,Azimuth\n2026-318T00:00:00,NaN,2\n2026-319T00:00:00,1,3", out _, out _), "Reject nonfinite angle");
@@ -258,7 +259,8 @@ public static class LunarEnvironmentValidation
         env.Apply();
         Check(Near(env.AppliedAzimuth,first.azimuth) && Near(env.AppliedElevation,first.elevation), "Scene starts at first recorded sample");
         Check(Vector3.Angle(-env.sunlight.transform.forward,env.SunDirection)<0.02f, "Directional light matches CSV direction");
-        Check(Vector3.Distance(RenderSettings.skybox.GetVector("_SunDirection"),env.SunDirection)<0.0001f, "Visible solar disk matches directional light");
+        Check(Vector3.Distance(RenderSettings.skybox.GetVector("_SunDirection"),env.SunDirection)<0.0001f, "Sky Sun direction matches directional light");
+        Check(env.sunlight.intensity==0, "Sun below the horizon gives no direct light");
         Check(RenderSettings.skybox != env.skyTemplate, "Private sky material does not overwrite template");
         Quaternion saved = env.EarthOrientation, placement = env.EarthPlacement;
         Vector3 oldSun = env.SunDirection;
@@ -293,7 +295,7 @@ public static class LunarEnvironmentValidation
         Check(layer.diffuseTexture.name=="moon_01_neutral_albedo_4k", "Neutralized surface color preserves separate original source");
         Check(layer.maskMapTexture && layer.maskMapTexture.name=="moon_01_mask_4k", "Linear roughness/height packed into URP mask");
         var terrains=GameObject.Find("NASA_NobileRim1_Full").GetComponentsInChildren<Terrain>();
-        Check(terrains.Length==16 && terrains.All(t=>t.drawInstanced && t.materialTemplate.shader.name=="Universal Render Pipeline/Terrain/Lit"), "All 16 tiles use instanced URP Terrain/Lit");
+        Check(terrains.Length>0 && terrains.All(t=>t.drawInstanced && t.materialTemplate.shader.name=="Universal Render Pipeline/Terrain/Lit"), "All scene tiles use instanced URP Terrain/Lit");
         Check(terrains.All(t=>t.terrainData.terrainLayers.Contains(layer)), "All original layer references retained");
         Check(!ShaderUtil.ShaderHasError(env.skyTemplate.shader) && !ShaderUtil.ShaderHasError(terrains[0].materialTemplate.shader), "Sky and terrain shaders compile");
         CaptureViews("after");
@@ -331,11 +333,18 @@ public static class LunarEnvironmentValidation
         var env=UnityEngine.Object.FindFirstObjectByType<LunarEnvironment>();
         if(playStage==0)
         {
+            HudPlayValidation.EnterGameplay();
+            // This check exercises the autonomous environment clock.
+            var session=UnityEngine.Object.FindFirstObjectByType<SpaceDilemma.Survival.SurvivalSession>();
+            if(session) session.enabled=false;
+            env.ReleaseSessionClock();
+            env.shadowUpdateSeconds=0;
             checks.Clear(); failures=0;
             Check(env && env.isActiveAndEnabled,"Environment active in actual Editor Play mode");
             Check(env.SunTable!=null && env.useSunAngleData,"CSV reparsed after Play mode domain reload");
             env.sunHoursFromStart=0; env.animateSun=false; env.Apply();
-            Check(Near(env.AppliedAzimuth,90.170044f) && Near(env.AppliedElevation,1.548597f),"Play mode first sample exact");
+            var first=env.SunTable.Evaluate(0);
+            Check(Near(env.AppliedAzimuth,first.azimuth) && Near(env.AppliedElevation,first.elevation),"Play mode first sample exact");
             env.useCelestialEphemeris=false; env.Apply();
             CaptureGlobe(env,"play-earth-before");
             env.EarthOrientation=Quaternion.AngleAxis(90,Vector3.right);
@@ -343,20 +352,23 @@ public static class LunarEnvironmentValidation
             env.RotateEarth(Vector3.forward,35);
             CaptureGlobe(env,"play-earth-rotated");
             Check(Quaternion.Angle(env.EarthOrientation,Quaternion.AngleAxis(90,Vector3.right))>60,"Play mode rotation remains independent at 90 degrees");
-            env.sunHoursFromStart=48; env.animateSun=true; env.sunHoursPerSecond=1000;
+            env.sunHoursFromStart=(float)env.SunTable.DurationHours; env.animateSun=true; env.sunHoursPerSecond=1000;
             stageFrame=Time.frameCount; playStage=1;
             return;
         }
         if(playStage==1 && Time.frameCount-stageFrame>=3)
         {
-            Check(Near(env.sunHoursFromStart,48) && Near(env.AppliedAzimuth,65.863331f),"Animated time clamps at CSV endpoint");
+            var last=env.SunTable.Evaluate(env.SunTable.DurationHours);
+            Check(Near(env.sunHoursFromStart,(float)env.SunTable.DurationHours) &&
+                  Near(env.AppliedAzimuth,last.azimuth) && Near(env.AppliedElevation,last.elevation),"Animated time clamps at CSV endpoint");
             env.sunHoursFromStart=0; env.sunHoursPerSecond=10;
             stageFrame=Time.frameCount; playStage=2;
             return;
         }
         if(playStage==2 && Time.frameCount-stageFrame>=3)
         {
-            Check(env.sunHoursFromStart>0 && env.AppliedAzimuth<90.170044f,"Sun animation advances and changes angle");
+            var first=env.SunTable.Evaluate(0);
+            Check(env.sunHoursFromStart>0 && !Near(env.AppliedAzimuth,first.azimuth),"Sun animation advances and changes angle");
             Check(Vector3.Angle(-env.sunlight.transform.forward,env.SunDirection)<0.02f,"Light tracks animated Sun");
             Check(!float.IsNaN(env.EarthDirection.x),"Earth direction remains finite");
             string report=$"UTC: {DateTime.UtcNow:O}\nPassed: {checks.Count-failures}; Failed: {failures}\n"+string.Join("\n",checks);

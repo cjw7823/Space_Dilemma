@@ -155,7 +155,7 @@ static class FinalStepChecks
             check(death?report.Hours<48:Near(report.Hours,48),"Result elapsed time matches the actual terminal boundary");
             check(!evaluation.popup.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Any(c=>c>127 && char.IsLetter(c))),"English result UI contains no non-English letters");
             check(evaluation.missionFills.Select((image,i)=>Near(image.fillAmount,report.MissionPercent((ResearchMission)i)/100)).All(b=>b),"Three authored result bars match frozen mission percentages");
-            var liveGauge = hud.Canvas.transform.Find("Research Gauge/Research Percent")?.GetComponent<TMP_Text>();
+            var liveGauge = hud.Canvas.transform.Find("Gameplay HUD/Research Gauge/Research Percent")?.GetComponent<TMP_Text>();
             string gaugePercent = report.OverallPercent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
             check(liveGauge && liveGauge.text == gaugePercent,
                 "The HUD research gauge and final report agree on the ending score");

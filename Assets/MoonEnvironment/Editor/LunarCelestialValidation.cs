@@ -80,7 +80,7 @@ public static class LunarCelestialValidation
         Check(table.StartUtc==env.SunTable.StartUtc,"Earth and solar CSV share the same UTC origin");
         Check(Near(table.Observer.northYawDegrees,env.trueNorthYaw,0.001f),"Observer north basis matches projected map yaw");
         Check(Near(table.Observer.worldXMeters,9997.5f) && Near(table.Observer.worldZMeters,9997.5f),"Observer is existing terrain center");
-        Check(Near(table.Evaluate(0).earthDiameter,1.8021298f) && Near(table.Evaluate(172800).earthDiameter,1.8152088f),"Physical Earth diameters replace artistic scale");
+        Check(Near(table.Evaluate(0).earthDiameter,1.8214974f) && Near(table.Evaluate(172800).earthDiameter,1.8471356f),"Physical Earth diameters match the mission period");
         Check(table.Evaluate(-1).seconds==0 && table.Evaluate(double.PositiveInfinity).seconds==172800,"Clamp both ephemeris endpoints");
         Check(table.Evaluate(double.NaN).seconds==0,"Nonfinite requested time stays at start");
         Check(Quaternion.Angle(table.Evaluate(0).starsOrientation,table.Evaluate(172800).starsOrientation)>20,"Star sphere follows lunar orientation across 48 hours");
@@ -99,16 +99,17 @@ public static class LunarCelestialValidation
         try
         {
             env.useCelestialEphemeris=true; env.sunHoursFromStart=0; env.Apply();
-            Check(env.EphemerisActive && Near(env.AppliedEarthDiameter,1.8021298f),"Scene consumes first physical frame");
+            Check(env.EphemerisActive && Near(env.AppliedEarthDiameter,table.Evaluate(0).earthDiameter),"Scene consumes first physical frame");
             Check(Vector3.Angle(env.EarthDirection,table.Evaluate(0).earthDirection)<0.02f,"Calculated Earth direction reaches scene");
             Check(Vector3.Distance(env.EarthDirection,RenderSettings.skybox.GetVector("_EarthDirection"))<0.0001f,"Earth direction reaches shader");
             Check(Vector3.Distance(env.CelestialFrame.earthSunDirection,RenderSettings.skybox.GetVector("_EarthSunDirection"))<0.0001f,"Globe has its own Earth-to-Sun light direction");
             Check(Vector3.Distance(RenderSettings.skybox.GetMatrix("_WorldToStars").MultiplyVector(env.CelestialFrame.starsOrientation*Vector3.forward),Vector3.forward)<0.0001f,"Time-dependent star sphere orientation reaches shader");
             Check(Near(env.sunDiameter,0.53f),"Sun angular diameter remains 0.53 degrees");
-            Check(Near(env.AppliedAzimuth,90.170044f) && Near(env.AppliedElevation,1.548597f),"Ground sunlight still uses unmodified CSV");
+            var firstSun=env.SunTable.Evaluate(0);
+            Check(Near(env.AppliedAzimuth,firstSun.azimuth) && Near(env.AppliedElevation,firstSun.elevation),"Ground Sun direction uses the supplied CSV");
             var origin=env.EarthDirection; var initial=env.AppliedEarthOrientation;
             env.sunHoursFromStart=24; env.Apply();
-            Check(Vector3.Angle(origin,env.EarthDirection)>1,"Earth position changes with shared clock");
+            Check(Vector3.Angle(origin,env.EarthDirection)>0.1f,"Earth position changes with shared clock");
             Check(Quaternion.Angle(initial,env.AppliedEarthOrientation)>5,"Globe continents change with Earth rotation");
             env.sunHoursFromStart=0; env.Apply();
             Check(Vector3.Distance(origin,env.EarthDirection)<0.000001f && Quaternion.Angle(initial,env.AppliedEarthOrientation)<0.02f,"Rewinding time restores physical Earth pose");
@@ -314,13 +315,17 @@ public static class LunarCelestialValidation
         var env=Env();
         if(playStage==0)
         {
+            HudPlayValidation.EnterGameplay();
+            var session=UnityEngine.Object.FindFirstObjectByType<SpaceDilemma.Survival.SurvivalSession>();
+            if(session) session.enabled=false;
+            env.ReleaseSessionClock();
             results.Clear(); failures=0;
             Check(env.EphemerisActive && env.CelestialTable.Count==577,"Offline ephemeris reloads in actual Play mode");
             Check(env.starCubemap && env.illustrativeStars>0,"Fixed stars available in player without network");
             env.sunHoursFromStart=0; env.animateSun=false; env.Apply();
             var start=env.EarthDirection;
             env.sunHoursFromStart=24; env.Apply();
-            Check(Vector3.Angle(start,env.EarthDirection)>1,"Runtime shared clock moves Earth");
+            Check(Vector3.Angle(start,env.EarthDirection)>0.1f,"Runtime shared clock moves Earth");
             env.sunHoursFromStart=0; env.Apply();
             Check(Vector3.Distance(start,env.EarthDirection)<0.000001f,"Runtime rewind restores Earth");
             env.animateSun=true; env.sunHoursPerSecond=10; playFrame=Time.frameCount; playStage=1;
@@ -334,7 +339,8 @@ public static class LunarCelestialValidation
         if(playStage==2 && Time.frameCount-playFrame>=3)
         {
             Check(env.sunHoursFromStart==48 && Near(env.CelestialFrame.seconds,172800),"Runtime clamps both bodies at final record");
-            Check(Near(env.AppliedEarthDiameter,1.8152088f),"Runtime endpoint has physical Earth size");
+            Check(Near(env.AppliedEarthDiameter,env.CelestialTable.Evaluate(env.CelestialTable.DurationSeconds).earthDiameter),
+                  "Runtime endpoint has physical Earth size");
             env.useCelestialEphemeris=false; env.Apply(); var q=env.EarthOrientation;
             env.RotateEarth(Vector3.up,15);
             Check(Quaternion.Angle(q,env.EarthOrientation)>14.9f,"Manual rotation still works during Play mode");

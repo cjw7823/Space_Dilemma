@@ -15,20 +15,22 @@ from pathlib import Path
 import sys
 import urllib.parse
 import urllib.request
-import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'Temp/CelestialDeps'))
+import numpy as np
 import spiceypy as spice
 
 BASE = 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/'
 KERNELS = [
     'lsk/naif0012.tls', 'pck/pck00011.tpc', 'spk/planets/de440s.bsp',
     'pck/moon_pa_de440_200625.bpc', 'fk/satellites/moon_de440_250416.tf',
-    'pck/earth_000101_270208_261113.bpc',
+    'pck/earth_000101_270210_261114.bpc',
 ]
+SUN_CSV = ROOT / 'Assets/MoonEnvironment/Data/SunAngle.csv'
 OUT = ROOT / 'Assets/MoonEnvironment/Data/Site6Celestial.json'
 QA = ROOT / 'QA/Celestial'
+STEP_SECONDS = 300
 P = np.array([[1.,0,0],[0,0,1],[0,1,0]])  # RH SPICE xyz -> Unity-friendly xzy
 
 def unit(v):
@@ -115,23 +117,56 @@ def evaluate(et,obs,a,previous_earth=None,previous_stars=None):
 
 site_global={}
 
-def horizons(site,start,stop):
+def horizons(site,start,stop,qa):
     params={'format':'json','COMMAND':"'399'",'MAKE_EPHEM':"'YES'",'EPHEM_TYPE':"'OBSERVER'",
             'CENTER':"'coord@301'",'COORD_TYPE':"'GEODETIC'",
             'SITE_COORD':f"'{site['longitudeEastDegrees']:.12f},{site['latitudeDegrees']:.12f},{site['elevationMeters']/1000:.9f}'",
-            'START_TIME':f"'{start:%Y-%m-%d %H:%M:%S}'",'STOP_TIME':f"'{stop:%Y-%m-%d %H:%M:%S}'",
-            'STEP_SIZE':"'24 h'",'QUANTITIES':"'4,13,14,10'",'CSV_FORMAT':"'YES'",'ANG_FORMAT':"'DEG'",'EXTRA_PREC':"'YES'"}
+            'START_TIME':f"'{start:%Y-%m-%d %H:%M:%S.%f}'",'STOP_TIME':f"'{stop:%Y-%m-%d %H:%M:%S.%f}'",
+            'STEP_SIZE':"'2'",'TIME_DIGITS':"'FRACSEC'",'QUANTITIES':"'4,13,14,10'",
+            'CSV_FORMAT':"'YES'",'ANG_FORMAT':"'DEG'",'EXTRA_PREC':"'YES'"}
     url='https://ssd.jpl.nasa.gov/api/horizons.api?'+urllib.parse.urlencode(params)
     response=json.loads(urllib.request.urlopen(url,timeout=120).read())
-    (QA/'horizons-response.json').write_text(json.dumps(response,indent=2),encoding='utf8')
-    (QA/'horizons-query.txt').write_text(url,encoding='utf8')
     if 'error' in response: raise RuntimeError(response['error'])
+    (qa/'horizons-response.json').write_text(json.dumps(response,indent=2),encoding='utf8')
+    (qa/'horizons-query.txt').write_text(url,encoding='utf8')
     return response['result']
+
+def solar_rows(path):
+    with path.open(encoding='utf-8-sig', newline='') as source:
+        reader = csv.DictReader(source)
+        if reader.fieldnames != ['Time', 'Elevation', 'Azimuth']:
+            raise ValueError('Expected Time,Elevation,Azimuth CSV header.')
+        rows = list(reader)
+    times = []
+    for row in rows:
+        value = row['Time'].strip()
+        fmt = '%Y-%jT%H:%M:%S.%f' if '.' in value else '%Y-%jT%H:%M:%S'
+        utc = datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+        if utc.strftime('%Y-%j') != value[:8] or (times and utc <= times[-1]):
+            raise ValueError(f'Invalid or unordered Moon Trek timestamp: {value}')
+        if not -90 <= float(row['Elevation']) <= 90 or not 0 <= float(row['Azimuth']) <= 360:
+            raise ValueError(f'Invalid solar angle at {value}')
+        times.append(utc)
+    if len(times) < 2:
+        raise ValueError('At least two ordered solar records are required.')
+    return rows, times
+
+def to_et(utc):
+    return spice.str2et(utc.strftime('%Y-%m-%d %H:%M:%S.%f UTC'))
 
 def main():
     global site_global
-    parser=argparse.ArgumentParser(); parser.add_argument('--download',action='store_true'); parser.add_argument('--horizons',action='store_true'); args=parser.parse_args()
-    QA.mkdir(parents=True,exist_ok=True)
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--csv', type=Path, default=SUN_CSV)
+    parser.add_argument('--output', type=Path, default=OUT)
+    parser.add_argument('--qa-dir', type=Path, help='Defaults to QA/Celestial/<UTC start date>.')
+    parser.add_argument('--download',action='store_true')
+    parser.add_argument('--horizons',action='store_true')
+    args=parser.parse_args()
+    solar, times = solar_rows(args.csv)
+    start,stop = times[0],times[-1]
+    qa = args.qa_dir or QA / start.date().isoformat()
+    qa.mkdir(parents=True,exist_ok=True)
     if args.download:
         with ThreadPoolExecutor(max_workers=3) as pool: provenance=list(pool.map(download,KERNELS))
     else:
@@ -142,35 +177,36 @@ def main():
             provenance.append({'file':path.name,'url':BASE+relative,'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
     for entry in provenance: spice.furnsh(str(ROOT/'Temp/CelestialKernels'/entry['file']))
     site,obs,a=observing_site(); site_global=site
-    solar=list(csv.DictReader((ROOT/'Assets/MoonEnvironment/Data/SunAngle.csv').open()))
-    parse_time=lambda text:datetime.strptime(text,'%Y-%jT%H:%M:%S.%f').replace(tzinfo=timezone.utc)
-    start,stop=parse_time(solar[0]['Time']),parse_time(solar[-1]['Time'])
     samples=[]; eq=sq=None
     duration=(stop-start).total_seconds()
-    for seconds in range(0,int(duration)+1,300):
-        utc=start+timedelta(seconds=seconds); et=spice.str2et(utc.strftime('%Y-%m-%d %H:%M:%S UTC'))
+    sample_seconds=list(range(0,math.ceil(duration),STEP_SECONDS))+[duration]
+    for seconds in sample_seconds:
+        et=to_et(start+timedelta(seconds=seconds))
         frame,eq,sq=evaluate(et,obs,a,eq,sq); frame['seconds']=seconds; samples.append(frame)
     data={'version':1,'startUtc':start.isoformat().replace('+00:00','Z'),'durationSeconds':duration,
-          'stepSeconds':300,'site':site,'samples':samples}
-    OUT.write_text(json.dumps(data,separators=(',',':')),encoding='utf8')
-    (QA/'kernel-provenance.json').write_text(json.dumps(provenance,indent=2),encoding='utf8')
-    (QA/'site.json').write_text(json.dumps(site,indent=2),encoding='utf8')
+          'stepSeconds':STEP_SECONDS,'site':site,'samples':samples}
+    (qa/'kernel-provenance.json').write_text(json.dumps(provenance,indent=2),encoding='utf8')
+    (qa/'site.json').write_text(json.dumps(site,indent=2),encoding='utf8')
     residuals=[]
-    for row in solar:
-        et=spice.str2et(parse_time(row['Time']).strftime('%Y-%m-%d %H:%M:%S UTC'))
+    for row,utc in zip(solar,times):
+        et=to_et(utc)
         frame,_,_=evaluate(et,obs,a)
         residuals.append({'time':row['Time'],'azimuthDifferenceDegrees':(frame['spiceSunAzimuth']-float(row['Azimuth'])+180)%360-180,
                           'elevationDifferenceDegrees':frame['spiceSunElevation']-float(row['Elevation'])})
-    (QA/'sun-csv-residuals.json').write_text(json.dumps(residuals,indent=2),encoding='utf8')
+    (qa/'sun-csv-residuals.json').write_text(json.dumps(residuals,indent=2),encoding='utf8')
     if args.horizons:
-        result=horizons(site,start,stop)
-        print(result[result.index('Date__(UT)'):result.index('$$EOE')+5])
-    else:
-        result=json.loads((QA/'horizons-response.json').read_text(encoding='utf8'))['result'] if (QA/'horizons-response.json').exists() else None
-    if result:
+        result=horizons(site,start,stop,qa)
         comparison=[]
         rows=list(csv.reader(result.split('$$SOE')[1].split('$$EOE')[0].strip().splitlines()))
-        for row,sample in zip(rows,[samples[0],samples[len(samples)//2],samples[-1]]):
+        if len(rows)!=3:
+            raise ValueError('Expected three Horizons rows spanning the requested period.')
+        for row,expected in zip(rows,[start,start+(stop-start)/2,stop]):
+            stamp=row[0].strip()
+            fmt='%Y-%b-%d %H:%M:%S.%f' if '.' in stamp else '%Y-%b-%d %H:%M:%S'
+            utc=datetime.strptime(stamp,fmt).replace(tzinfo=timezone.utc)
+            if abs((utc-expected).total_seconds())>0.001:
+                raise ValueError(f'Unexpected Horizons UTC: {stamp}; expected {expected.isoformat()}')
+            sample,_,_=evaluate(to_et(utc),obs,a)
             delta=lambda a,b:(a-b+180)%360-180
             comparison.append({'utc':row[0].strip(),'azimuthErrorDegrees':delta(sample['earthAzimuth'],float(row[3])),
                 'elevationErrorDegrees':sample['earthElevation']-float(row[4]),
@@ -178,7 +214,7 @@ def main():
                 'subLongitudeErrorDegrees':delta(sample['subObserverLongitudeEast'],float(row[6])),
                 'subLatitudeErrorDegrees':sample['subObserverLatitude']-float(row[7]),
                 'illuminatedFractionError':sample['illuminatedFraction']-float(row[8])/100})
-        (QA/'horizons-comparison.json').write_text(json.dumps(comparison,indent=2),encoding='utf8')
+        (qa/'horizons-comparison.json').write_text(json.dumps(comparison,indent=2),encoding='utf8')
         assert all(abs(r['azimuthErrorDegrees'])<0.001 and abs(r['elevationErrorDegrees'])<0.001 and
                    abs(r['diameterErrorArcseconds'])<0.1 and abs(r['subLongitudeErrorDegrees'])<0.01 and
                    abs(r['subLatitudeErrorDegrees'])<0.01 and abs(r['illuminatedFractionError'])<0.001 for r in comparison)
@@ -190,18 +226,18 @@ def main():
             b=spice.latrec(1,math.radians(lon_deg),math.radians(lat_deg)); world=m@P@b
             texture_body=P@m.T@world
             assert np.max(np.abs(texture_body-b))<1e-12
-    checks.append('577 orientations: Greenwich/E90/W90/North/South axes round-trip without handedness loss')
+    checks.append(f'{len(samples)} orientations: Greenwich/E90/W90/North/South axes round-trip without handedness loss')
     checks.append('All proper rotation matrices validated before conversion; quaternion sign continuity retained')
     maxima={'earthPoseDegrees':0.,'starsPoseDegrees':0.,'earthDirectionDegrees':0.,'earthDiameterArcseconds':0.}
     for i in range(len(samples)-1):
         a0,b0=samples[i],samples[i+1]
-        seconds=a0['seconds']+150
+        seconds=(a0['seconds']+b0['seconds'])/2
         utc=start+timedelta(seconds=seconds)
-        exact,_,_=evaluate(spice.str2et(utc.strftime('%Y-%m-%d %H:%M:%S UTC')),obs,a)
+        exact,_,_=evaluate(to_et(utc),obs,a)
         for field,key in [('earthOrientation','earthPoseDegrees'),('starsOrientation','starsPoseDegrees')]:
-            qa=np.array(list(a0[field].values())); qb=np.array(list(b0[field].values()))
-            if np.dot(qa,qb)<0: qb=-qb
-            interpolated=unit(qa+qb); qe=np.array(list(exact[field].values()))
+            left=np.array(list(a0[field].values())); right=np.array(list(b0[field].values()))
+            if np.dot(left,right)<0: right=-right
+            interpolated=unit(left+right); qe=np.array(list(exact[field].values()))
             error=math.degrees(2*math.acos(np.clip(abs(np.dot(interpolated,qe)),-1,1)))
             maxima[key]=max(maxima[key],error)
         da=np.array(list(a0['earthDirection'].values())); db=np.array(list(b0['earthDirection'].values()))
@@ -209,8 +245,12 @@ def main():
         maxima['earthDirectionDegrees']=max(maxima['earthDirectionDegrees'],math.degrees(math.acos(np.clip(np.dot(unit(da+db),de),-1,1))))
         maxima['earthDiameterArcseconds']=max(maxima['earthDiameterArcseconds'],abs((a0['earthDiameter']+b0['earthDiameter'])/2-exact['earthDiameter'])*3600)
     assert maxima['earthPoseDegrees']<0.005 and maxima['starsPoseDegrees']<0.005 and maxima['earthDirectionDegrees']<0.001
-    (QA/'interpolation-errors.json').write_text(json.dumps(maxima,indent=2),encoding='utf8')
-    (QA/'offline-checks.json').write_text(json.dumps(checks,indent=2),encoding='utf8')
+    (qa/'interpolation-errors.json').write_text(json.dumps(maxima,indent=2),encoding='utf8')
+    (qa/'offline-checks.json').write_text(json.dumps(checks,indent=2),encoding='utf8')
+    args.output.parent.mkdir(parents=True,exist_ok=True)
+    temporary=args.output.with_suffix(args.output.suffix+'.tmp')
+    temporary.write_text(json.dumps(data,separators=(',',':')),encoding='utf8')
+    temporary.replace(args.output)
     print(json.dumps({'samples':len(samples),'site':site,'first':samples[0],'middle':samples[len(samples)//2],'last':samples[-1]},indent=2))
 
 if __name__=='__main__': main()

@@ -132,6 +132,7 @@ public static class MoonBaseValidation
         var camera=Camera.main;
         if(stage==0)
         {
+            HudPlayValidation.EnterGameplay();
             checks.Clear(); failures=0; errors.Clear(); Application.logMessageReceived+=OnLog;
             var brain = camera.GetComponent<CinemachineBrain>();
             var target = p.thirdPersonCamera.Follow;

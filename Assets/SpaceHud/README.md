@@ -6,11 +6,15 @@
 SampleScene
 ├ Space HUD
 │  ├ HUD Canvas
-│  │  ├ Player Controls Panel
-│  │  ├ Minimap Frame / Minimap Viewport / Rover Marker / Player Direction
-│  │  ├ Objective Panel / Objective Header / Objective Title / Objective Description / Objective Progress
-│  │  ├ Clock Panel / Clock Text
-│  │  ├ Pause Button
+│  │  ├ Gameplay HUD (관람 중 비활성)
+│  │  │  ├ Mission Board / Research Gauge / Radiation Gauge
+│  │  │  ├ Player Controls Panel
+│  │  │  ├ Minimap Frame / Minimap Viewport / Mission Markers·Rover Marker·Player Direction
+│  │  │  ├ Minimap Frame / Mission Legend
+│  │  │  ├ Objective Panel / Objective Header / Objective Title / Objective Description / Objective Progress
+│  │  │  ├ Clock Panel / Clock Text
+│  │  │  └ Pause Button / SPE Warning Panel
+│  │  ├ Power·Sample Information·Plant Experiment·Final Result Overlays
 │  │  └ Pause Overlay (기본 비활성)
 │  │     ├ Pause Window / Continue·Settings·Quit Game 버튼
 │  │     └ Settings Window / 언어·COM 포트·수신 진단
@@ -25,7 +29,9 @@ SampleScene
 
 일시정지 창을 편집할 때는 Hierarchy에서 `Pause Overlay`를 임시로 활성화하고 수정한 뒤 다시 비활성화하세요. `Settings Window`를 편집할 때는 해당 자식도 켭니다. F2 입력 예제 메뉴는 `Input Examples Canvas`를 같은 방식으로 편집합니다.
 
-Esc로 일시정지한 뒤 **Settings / 설정**을 선택하면 언어와 COM 포트를 바꿀 수 있습니다. **Quit Game / 게임 종료**는 실행한 게임을 닫고 Unity Editor에서는 Play를 끝냅니다. 설정 중 Esc는 일시정지 창으로 돌아갑니다.
+SampleScene을 실행하면 검은 배경의 **Space Dilemma** 메인 화면이 먼저 표시됩니다. **게임 시작**은 방사선 브리핑을 열며, 브리핑을 닫으면 임무 시간이 진행됩니다. **옵션**에서 언어와 COM 포트를 바꿀 수 있고, **게임 종료**는 실행 중인 게임을 닫습니다. Unity Editor에서는 Play를 끝냅니다.
+
+Esc로 일시정지한 뒤 **설정**을 선택하면 같은 옵션 화면이 열립니다. 설정에서 뒤로 가거나 Esc를 누르면 열기 직전의 메뉴로 돌아갑니다. 일시정지 메뉴의 **메인 화면**은 SampleScene을 다시 불러와 진행 중인 임무를 초기화하고 타이틀을 표시합니다. 언어와 COM 설정은 유지됩니다.
 
 - English와 한국어 중 메뉴·HUD 안내 언어를 선택합니다. 선택은 다음 실행에도 적용됩니다. 영어 모드는 목표와 COM 오류도 영어로 표시합니다. 한국어 모드에서는 COM, 키 이름, F2 테스트 화면 같은 기술 용어를 영어로 표시할 수 있습니다.
 - 감지된 포트 버튼을 눌러 목록을 순서대로 선택하거나 COM을 직접 입력합니다. 전송 속도, 데이터 비트, 패리티, 정지 비트, DTR과 RTS를 입력한 뒤 **연결 / 재연결**을 누르면 현재 실행에 적용되고 다음 실행을 위해 저장됩니다. 기존 자동 연결 설정이 켜져 있으면 저장한 포트를 다음에 자동으로 엽니다.
@@ -77,3 +83,13 @@ SampleScene의 Survival Session/FinalEvaluation과 HUD Canvas/Final Result Overl
 SampleScene의 `Space HUD / HUD Canvas / Research Gauge`와 `Radiation Gauge`는 직접 편집할 수 있는 세로 카드다. 파란 카드의 숫자는 시료 채취·보존, 측정장비, 식물 재배의 가중 합산 점수이며 결과 화면에도 같은 계산을 사용한다. 붉은 카드는 누적 피폭량을 게임의 위험 기준 대비 퍼센트로 보여주며 mSv 값도 아래에 표시한다.
 
 Project 창에서 `Assets/Survival/Evaluation Rules.asset`을 열면 Inspector에서 세 미션의 비중을 입력할 수 있다. 예를 들어 40, 35, 25를 입력하면 실제 반영 비율은 40%, 35%, 25%다. 입력 합계가 다르면 같은 상대 비율을 유지하며 100%로 환산한다. 세 값이 모두 0이면 동일 비중을 사용한다. 설정은 다음 Play부터 적용된다. 장치별 데이터 수집 속도는 `Research Data Rules - Test Values.asset`에서 조절한다.
+
+## 미션 미니맵과 순수 감상 모드
+
+`HUD Canvas/Gameplay HUD/Minimap Frame`에는 정사각형 미니맵과 아래쪽 3종 범례를 배치했다. 시료·보관소는 금색 돌 모양, 측정장비는 청록색 안테나, 식물은 초록색 새싹이다. 미니맵 안의 `Mission Markers`에 12개 편집 가능한 Image/HudMapMarker를 저장했다. 보관 슬롯 3개가 같은 위치에 있으면 아이콘도 겹치며, 각각 옮기면 개별 위치를 따른다. 플레이어 화살표는 중앙에서 마커보다 위에 표시하고 기존 로버 마커도 유지한다.
+
+각 마커의 Target은 해당 ResearchTarget의 Transform을 직접 참조한다. 숫자 좌표를 따로 복사하지 않는다. 플레이 중이나 편집 중에 미션 포인트 또는 그 부모 그룹을 옮기면 아이콘이 따라간다. 높은 지형의 목표도 수평 좌표로 표시한다. 지도 밖의 목표는 가장자리에 방향을 유지해 표시하며, 채취 후 비활성화된 시료는 마커도 숨긴다. 월드 공간에 새 아이콘·마커 모델을 추가하지 않고 Canvas 안에만 표시한다.
+
+L/R3 관람 중에는 Gameplay HUD 그룹 전체를 끄고 복귀 시 이전 상태를 복원한다. Pause/설정/연구 설명/최종 결과 오버레이는 Canvas 직속에 유지한다. 상세 조작은 `Assets/MoonBase/SCENERY_VIEW.md`, 후속 검증은 `QA/SceneryMissionMap/VALIDATION.md`다.
+
+편집 중 실시간 위치 갱신은 Editor/MissionMapEditorPreview.cs가 지원한다. 이 코드는 검증 전용과 구분해 유지한다. 새 미션 오브젝트를 추가할 때는 UI 마커의 Target을 직접 연결하거나 Tools > Space HUD > Set Up Scenery and Mission Map으로 배치한다. 기존 포인트 이동에는 메뉴 실행이 필요 없다.

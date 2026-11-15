@@ -28,6 +28,8 @@ namespace SpaceDilemma.CustomInput
         public static double Now => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
         public SerialController Device { get; private set; }
         public SerialDiagnostics Diagnostics { get; } = new SerialDiagnostics();
+        // Absolute K from the last validated packet. Disconnect and timeout clear that sample.
+        public int? RawKnobPosition => calibration.knob.enabled ? Diagnostics.raw?.analog[0] : null;
         public SerialConnectionStatus Status { get; private set; }
         public event Action<SerialPacket, SerialControllerState> PacketReceived;
 

@@ -47,8 +47,8 @@ namespace SpaceDilemma.Survival
         {
             var config = Scenario;
             if (config)
-                Run = new SurvivalRun(config.time.durationHours, config.time.speStartHour, config.radiation.normalRate,
-                    config.radiation.speRate, config.radiation.lethalDose, config.radiation.indoorTransmission,
+                Run = new SurvivalRun(config.time.durationHours, config.time.speStartHour, config.radiation.NormalRate,
+                    config.radiation.SpeRate, config.radiation.lethalDose, config.radiation.indoorTransmission,
                     config.start.elapsedHours, config.start.dose, config.time.speDurationHours);
             else
                 Run = new SurvivalRun(rules.durationHours, rules.speStartHour, rules.normalRate,
@@ -65,7 +65,7 @@ namespace SpaceDilemma.Survival
             IsInside = ContainsPlayer();
             var shield = activeShield as IRadiationShield;
             Run.UpdateRate(IsInside, shield);
-            if (IsPaused || Time.deltaTime == 0) return;
+            if (IsPaused || Time.timeScale == 0 || Time.deltaTime == 0) return;
             Run.Advance(Time.deltaTime * (double)ClockSpeed, IsInside, shield);
         }
 

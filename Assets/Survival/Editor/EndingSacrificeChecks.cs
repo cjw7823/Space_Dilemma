@@ -122,10 +122,11 @@ static class EndingSacrificeChecks
     {
         background=Application.runInBackground;Application.runInBackground=true;
         Directory.CreateDirectory(Output);yield return Frames(8);Pure();
+        HudPlayValidation.EnterGameplay();
         var evaluation=UnityEngine.Object.FindFirstObjectByType<FinalEvaluation>();
         var session=evaluation.session;var power=UnityEngine.Object.FindFirstObjectByType<BasePowerController>();
         var shield=UnityEngine.Object.FindFirstObjectByType<ActiveRadiationShield>();
-        session.enabled=false;session.Run.Advance(24-session.Run.Hours,true,shield);
+        session.enabled=false;session.Run.Advance(session.Scenario.time.speStartHour-session.Run.Hours,true,shield);
         power.Apply();power.SetShield(1);
         for(int m=0;m<3;m++)power.SetAllocation(m,0);
         Check(Enumerable.Range(0,3).All(m=>Enumerable.Range(0,3).All(d=>power.Budget.Abandoned(m,d))),"Actual scene locks each deliberately sacrificed device");

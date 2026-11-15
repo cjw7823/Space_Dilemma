@@ -86,10 +86,11 @@ static class SpeStepChecks
             Place(player,player.rover.transform.position+Vector3.right*2);
             power.SetShield(0); guidance.language.UseEnglish(); yield return Wait(.1f);
             check(!session.IsInside && !guidance.panel.activeSelf && guidance.AlertCount==0,"Before SPE the authored warning is hidden and the player can remain outdoors");
-            session.Run.Advance(Math.Max(0,24-session.Run.Hours-.01),false,shield);
-            check(!session.Run.SpeActive,"SPE does not start before game hour 24");
+            double eventHour=session.Scenario?session.Scenario.time.speStartHour:24;
+            session.Run.Advance(Math.Max(0,eventHour-session.Run.Hours-.01),false,shield);
+            check(!session.Run.SpeActive,"SPE does not start before the configured event hour");
             session.Run.Advance(.02,false,shield); yield return Wait(.1f);
-            check(session.Run.SpeActive && guidance.AlertCount==1 && guidance.panel.activeSelf && guidance.details.text.Contains("RETURN TO BASE"),"Crossing 24h once shows the outdoor return-to-base warning independently of player actions");
+            check(session.Run.SpeActive && guidance.AlertCount==1 && guidance.panel.activeSelf && guidance.details.text.Contains("RETURN TO BASE"),"Crossing the configured SPE hour once shows the outdoor return-to-base warning independently of player actions");
             double outdoorRate=session.Run.Rate; power.SetShield(1); yield return Wait(.1f);
             check(Near(outdoorRate,session.Run.Rate) && guidance.details.text.Contains("Here: 0"),"A fully powered indoor shield does not protect a player outside");
             capture(hud,1920,1080,"spe-outside-en-1920.png"); yield return Wait(.15f); capture(hud,1280,720,"spe-outside-en-1280.png");

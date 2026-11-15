@@ -67,6 +67,7 @@ static class SampleDiscoveryChecks
     {
         oldBackground=Application.runInBackground;Application.runInBackground=true;
         for(int i=0;i<8;i++) yield return null;
+        HudPlayValidation.EnterGameplay();
         var ui=UnityEngine.Object.FindFirstObjectByType<SampleCollectionPopup>();
         var hud=UnityEngine.Object.FindFirstObjectByType<HudController>();
         var hub=InputHub.Active; player=UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();

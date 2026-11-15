@@ -46,6 +46,8 @@ static class SceneryViewSetup
         actions.FindActionMap("Scenery",true);
         profile.bindingOverrides=Array.Empty<BindingOverride>();
         EditorUtility.SetDirty(profile);view.inputContext=profile;
+        view.environment=UnityEngine.Object.FindFirstObjectByType<LunarEnvironment>();
+        view.gameplayHud=UnityEngine.Object.FindFirstObjectByType<SpaceDilemma.Hud.HudController>()?.Canvas.transform.Find("Gameplay HUD")?.gameObject;
 
         const string blendPath="Assets/MoonBase/Scenery Camera Blends.asset";
         var brain=Camera.main.GetComponent<CinemachineBrain>();

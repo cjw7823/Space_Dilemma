@@ -15,13 +15,17 @@ MonoBehaviour:
   time:
     durationHours: 48
     gameHoursPerSecond: 0.08
-    speStartHour: 24
+    speStartHour: 38.4
     speDurationHours: 0
     sunUpdateSeconds: 1
   radiation:
+    useRadLabAverages: 1
+    gameGain: 570
+    preAverageUGyPerHour: 11.46644097222222
+    postAverageUGyPerHour: 65.12366319444443
     normalRate: 0.1
     speRate: 3
-    lethalDose: 50
+    lethalDose: 600
     indoorTransmission: 0.35
     maximumReduction: 0.8
   interaction:

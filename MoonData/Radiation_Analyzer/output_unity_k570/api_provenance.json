@@ -1,0 +1,8 @@
+{
+  "donki_urls": [],
+  "radlab_urls": [],
+  "warnings": [],
+  "generated_from_csv": "data\\radlab_moon_observations.csv",
+  "data_quality_note": "One-hour values assigned to hourly buckets nearest observed timestamps; hour boundaries across SEP are approximated.",
+  "dose_warning": "GAME mSv IS NOT NASA astronaut effective dose. Gain is gameplay-only."
+}

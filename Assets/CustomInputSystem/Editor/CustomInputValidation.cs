@@ -226,6 +226,7 @@ namespace SpaceDilemma.CustomInput.Editor
         static IEnumerator PlayCases()
         {
             yield return Wait(.3f);
+            HudPlayValidation.EnterGameplay();
             hub = InputHub.Active; player = UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();
             originalEditorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
             originalBackground = InputSystem.settings.backgroundBehavior;

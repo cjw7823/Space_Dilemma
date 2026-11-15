@@ -4,19 +4,19 @@
 
 ## 현재 기본 모드: SPICE 지구와 고정 별 지도
 
-`Moon Environment > Lunar Environment`에서 **Use Celestial Ephemeris**가 켜져 있다. `Celestial Ephemeris`에는 `Data/Site6Celestial.json`, `Star Cubemap`에는 `Data/FixedIllustrativeStars.asset`이 연결되어 있다. 기존 **CSV 시간 (시작 후 h)** 슬라이더 하나로 태양·지구·별 천구를 함께 움직인다. Play 모드의 `Animate Sun`도 이 공통 시간을 진행시킨다. 기존에 사용자가 선택한 시각은 설정 적용 시 초기화하지 않았다.
+`Moon Environment > Lunar Environment`의 **Use Celestial Ephemeris**는 `Data/Site6Celestial.json`을 사용한다. 편집 모드에서는 **CSV 시간 (시작 후 h)** 슬라이더로 태양·지구·별 천구를 조절한다. SampleScene의 Play 모드에서는 Survival Session의 공통 시간이 세 방향을 갱신한다.
 
 지구의 방향·각지름·자전축·대륙 방향·밝은 면은 NASA/JPL SPICE 천체력으로 계산했다. 실제 지구 날씨나 당일 구름은 재현하지 않는다. 기존 Blue Marble 월별 지도는 2004년 11월 자료이고 지구는 구형으로 표현한다. 명암에는 지구에서 태양을 바라보는 별도 방향을 사용하며, 지면 Directional Light는 사용자 제공 SunAngle CSV를 계속 사용한다.
 
 | UTC | 지구 방위각 | 지구 고도 | 각지름 | 밝은 면 |
 | --- | --- | --- | --- | --- |
-| 2026-11-14 00:00 | 321.536022° | −1.080394° | 1.802130° | 80.7678% |
-| 2026-11-15 00:00 | 320.093009° | −0.056086° | 1.806006° | 72.8896% |
-| 2026-11-16 00:00 | 318.673407° | 1.113850° | 1.815209° | 64.1487% |
+| 2022-08-25 20:48 | 319.811564° | 9.843911° | 1.821497° | 97.7150% |
+| 2022-08-26 20:48 | 318.907045° | 9.660931° | 1.833377° | 99.6080% |
+| 2022-08-27 20:48 | 318.185019° | 9.181856° | 1.847136° | 99.5867% |
 
 고도는 관측점의 국지 수평면에 대한 값이다. 실제 능선·지형에 지구가 가려질 수 있다. 음수 고도라는 이유로 셰이더에서 원반을 강제 제거하거나, 지구가 보이게 고도를 올리지 않는다. 약 20km 평면 Terrain 밖의 달 곡면과 전역 지형 차폐는 계산하지 않는다.
 
-별은 사용자의 **항상 보이는 별** 선택에 따라 `Illustrative Stars=0.85`로 표시한다. 밝은 표면과 함께 이렇게 보이는 것은 노출을 단순화한 연출이다. 씨드 20261114로 생성한 연출용 별 6000개이며 실제 별자리 목록이 아니다. 1024²×6면 R8 큐브맵의 Gaussian 별, 밉맵, Trilinear 필터링을 사용하고 시간별 랜덤 생성·픽셀 hash·임의 반짝임을 사용하지 않는다. 별 천구 전체는 달의 자세에 따라 회전한다. 카메라 위치는 별 방향 계산에 사용하지 않아 이동 시 시차가 없다. 매우 좁은 FOV로 확대하면 별의 유한한 필터 폭과 큐브맵 해상도가 보일 수 있다.
+별은 사용자 설정 `Illustrative Stars`로 표시한다. 씨드 20261114로 생성한 연출용 별 6000개다. 1024²×6면 R8 큐브맵의 Gaussian 별, 밉맵, Trilinear 필터링을 사용한다. 별 천구 전체는 달의 자세에 따라 회전하며 카메라가 이동해도 같은 방향에 보인다.
 
 태양 `Sun Diameter=0.53`은 **각지름(도)** 이다. 광원 밝기·Bloom과 별개이며 원반 크기를 부풀려 밝기를 표현하지 않는다.
 
@@ -52,7 +52,7 @@
 
 ## 지구가 작게 보이는 이유와 크기 재검증
 
-2026-11-14 후속 재검증에서도 실제 각지름은 약 **1.802~1.815°**로 확인됐다. 지구 적도 반지름 6378.1366km와 관측점까지 거리 약 40.27~40.56만km로 `2×asin(반지름/거리)`를 계산하고, 새 Horizons 응답의 각지름과 비교했다. 최대 차이는 0.0004 arcsec 이하다. 태양 원반 0.53°의 지름 약 **3.4배**다.
+2022년 임무 기간의 지구 각지름은 약 **1.821~1.847°**다. 지구 적도 반지름 6378.1366km와 달 관측점까지의 거리로 `2×asin(반지름/거리)`를 계산하고 Horizons의 시작·중간·종료 값과 대조했다. 최대 차이는 약 0.00037 arcsec이다. 기록은 `QA/Celestial/2022-08-25/earth-size-independent.json`에 있다.
 
 카메라의 화면 중앙에서 지름은 다음 식을 따른다. 시야각과 각지름은 도 단위 입력을 라디안으로 바꿔 계산한다.
 
@@ -60,28 +60,28 @@
 지름(px) = 화면 높이(px) × tan(지구 각지름/2) / tan(카메라 수직 FOV/2)
 ```
 
-| 해상도 / 수직 FOV 60° | 예측값 (첫 시각) | 실제 Unity 렌더로 맞춘 원반 지름 |
-| --- | --- | --- |
-| 1280×720 | 19.61px | 약 19.54px |
-| 1920×1080 | 29.42px | 약 29.36px |
+| 해상도 / 수직 FOV 60° | 화면 중심 기준 예측값 (2022년 임무 시작) |
+| --- | --- |
+| 1280×720 | 19.82px |
+| 1920×1080 | 29.74px |
 
-FOV 30°·90°에서도 두 해상도로 측정했고 원형과 투영식이 일치했다. Unity Game 뷰가 1:1보다 축소 표시되면 화면에서 보이는 지름도 그 배율만큼 작아진다. 기존 수동 5.736°는 연출값이었고 현재 천체력 모드의 지름은 실제 거리 기준이다. 이번 재검증에서 지구를 확대하거나 카메라 FOV를 바꾸지 않았다. 원문 응답·독립 계산·픽셀 측정은 `QA/StarDesign`에 있다.
+Unity Game 뷰를 축소하면 원반도 같은 배율로 작아진다. 기존 수동 5.736°는 연출값이고 천체력 모드의 지름은 관측 거리로 계산한다. 이전 2026년 자료의 픽셀 측정은 `QA/StarDesign`에 있다.
 
 ## 천체력 자료와 좌표 처리
 
-개발용 `MoonData/Tools/build_celestial_ephemeris.py`가 2026-11-14 00:00~16일 00:00 UTC를 5분 간격, 끝점 포함 **577개 기록**으로 저장한다. 실행 파일에는 JSON·큐브맵만 들어가고 Python·SPICE 커널·네트워크 연결은 필요 없다. 방향과 자세는 구면/Quaternion 보간하고 범위 밖 시각은 끝점에 고정한다. 초기 파싱 후에는 TextAsset 문자열을 매 프레임 복사하지 않으며 Editor의 자료 재임포트 시 캐시를 무효화한다.
+개발용 `MoonData/SunAngle/build_celestial_ephemeris.py`가 2022-08-25 20:48~27일 20:48 UTC를 5분 간격, 끝점 포함 **577개 기록**으로 저장한다. Unity는 저장된 JSON과 큐브맵을 읽는다. 방향과 자세는 구면/Quaternion 보간을 사용하며 범위 밖 시각은 끝점에 고정한다. Editor는 데이터 에셋을 다시 가져오면 캐시를 갱신한다.
 
 관측점은 보존한 지형의 중앙 `(Unity X,Z)=(9997.5,9997.5)m`, 투영 좌표 `(84000,110000)m`다. 기존 남극 입체투영과 반지름 1737.4km로 위도 **−85.438100482746°**, 동경 **37.366669412769°**를 구했다. 원본 RAW의 중앙 높이 **5945.372875m**를 반영했다. 이는 원본 고도 기준이며 Unity의 Y에는 원본 최저 높이 860.002563m가 빠져 있다.
 
 달 기준계는 `MOON_ME`(DE440의 `MOON_ME_DE440_ME421`), 지구 기준계는 `ITRF93`다. DEM의 지리 좌표를 이 달 기준계에 맞춰 사용하는 것은 명시적인 정합 가정이다. CSV의 정확한 추출점과 같다고 검증한 것이 아니다. 지형을 재배치/회전하거나 다른 관측점을 쓰면 새 데이터가 필요하다.
 
-- NASA/JPL 커널: `naif0012.tls`, `pck00011.tpc`, `de440s.bsp`, `moon_pa_de440_200625.bpc`, `moon_de440_250416.tf`, `earth_000101_270208_261113.bpc`.
-- 커널은 [NAIF Generic Kernels](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/)에서 확보했다. URL·크기·SHA-256은 `QA/Celestial/kernel-provenance.json`에 있다. 지구 자세 커널에는 예측 구간이 포함되며 과학적 오차가 0이라고 주장하지 않는다.
+- NASA/JPL 커널은 `naif0012.tls`, `pck00011.tpc`, `de440s.bsp`, `moon_pa_de440_200625.bpc`, `moon_de440_250416.tf`, `earth_000101_270210_261114.bpc`다.
+- 커널 URL·크기·SHA-256은 `QA/Celestial/2022-08-25/kernel-provenance.json`에 있다. [NAIF Generic Kernels](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/)
 - `spkcpo(..., LT+S)`로 지표 관측자의 겉보기 지구 방향을 구하고, 지구 자세는 광행시간을 뺀 시각에서 평가한다. 별 천구는 J2000 관성 방향을 달의 현재 프레임으로 옮긴다.
 - Unity의 좌우 좌표계 차이는 SPICE xyz를 xzy로 바꾸는 고정 변환과 국지 동/상/북 기저에서 처리한다. 그 후 행렬식 +1인 회전만 Quaternion으로 저장한다. 지구 텍스처 모드에서는 Greenwich=+X, 동경 90°=+Z, 북극=+Y로 해석한다. 지구 지도는 경도(U)를 Repeat, 위도(V)를 Clamp로 샘플링해 반대 극의 색이 섞이지 않게 한다.
-- 국지 방향·투영 지도 yaw는 앞선 태양 처리와 동일한 기준이다. 최초 SPICE 태양 방향은 CSV보다 방위각 약 −0.793°, 고도 약 +0.063° 차이가 난다. 지점/모델 차이를 숨기지 않고 `QA/Celestial/sun-csv-residuals.json`에 모든 시각의 차이를 기록했으며 CSV를 수정하지 않았다.
+- 국지 방향에는 기존 남극 투영의 진북 yaw를 사용한다. 임무 시작 시 DEM 중심의 SPICE 태양과 Moon Trek CSV 간 차이는 방위각 약 +2.094°, 고도 약 −0.319°다. 전체 차이는 `QA/Celestial/2022-08-25/sun-csv-residuals.json`에 기록했다. 지면 광원은 첨부 CSV의 값을 사용한다.
 
-재생성에는 NumPy와 개발용 `spiceypy==8.0.2`가 필요하다. 패키지 설치 위치는 `Temp/CelestialDeps`, 커널 캐시는 `Temp/CelestialKernels`로 프로젝트의 기존 Git 제외 영역이다. 프로젝트 루트에서 개발용 Python으로 `MoonData/Tools/build_celestial_ephemeris.py --download --horizons`를 실행하면 자료를 생성하고 Horizons 대조 자료도 저장한다. 이미 확보한 파일만으로 재생성할 때는 두 옵션을 생략한다. 별 지도의 재생성 메뉴는 `Tools > Moon Environment > Rebake Illustrative Star Cubemap`이다.
+재생성에는 NumPy와 개발용 `spiceypy==8.0.2`가 필요하다. 패키지는 `Temp/CelestialDeps`, 커널 캐시는 `Temp/CelestialKernels`에 둔다. 프로젝트 루트에서 `python MoonData/SunAngle/build_celestial_ephemeris.py --download --horizons`를 실행하면 새 기간의 JSON과 Horizons 대조 자료를 생성한다. 설치와 다른 CSV의 지정 방법은 `MoonData/SunAngle/README.md`를 따른다.
 
 ## 수동 지구 자유 회전
 
@@ -104,15 +104,18 @@ Hierarchy에서 **Moon Environment**를 선택하고 **Use Celestial Ephemeris�
 | --- | --- |
 | 열 | `Time,Elevation,Azimuth` |
 | 기록 수 | 51 |
-| 시작 | 2026-318T00:00:00 = 2026-11-14 00:00:00 UTC |
-| 끝 | 2026-320T00:00:00 = 2026-11-16 00:00:00 UTC |
+| 시작 | 2022-237T20:48:00 = 2022-08-25 20:48:00 UTC |
+| SPE 시각 | 2022-239T11:12:00 = 2022-08-27 11:12:00 UTC (38.4 게임시간, 실제 8분) |
+| 끝 | 2022-239T20:48:00 = 2022-08-27 20:48:00 UTC |
 | 간격 | 57분 36초, 총 48시간 |
-| 첫 방위각 / 고도 | 90.170044° / 1.548597° |
-| 끝 방위각 / 고도 | 65.863331° / 3.462417° |
+| 첫 방위각 / 고도 | 154.816995° / −5.390978° |
+| 끝 방위각 / 고도 | 130.280402° / −4.268556° |
+
+이전 2026년 CSV와 지구·별 천체력 파일은 `Data/Legacy`에 원본으로 보관했다. 기존 씬의 두 에셋 슬롯은 같은 위치의 새 데이터를 읽는다.
 
 `CSV 시간 (시작 후 h)` 슬라이더로 시간을 바꾼다. UTC 시각과 실제 적용 중인 CSV 방위각·고도를 Inspector에서 확인할 수 있다. 두 기록 사이는 선형 보간하고 방위각은 0/360°를 가장 짧은 방향으로 연결한다. 범위 밖에서는 첫/끝 기록에 고정하며 임의 외삽·반복하지 않는다.
 
-`Animate Sun`을 켜면 Play 모드에서 진행한다. `Sun Hours Per Second`는 실제 1초당 기록 시간의 증가량이다. 기본 0.02는 72배 시간 압축이며 마지막 기록에서 멈춘다. 수동 편집한 시간도 평가 시 데이터 범위로 제한한다. CSV가 없거나 손상되면 Inspector에서 오류를 표시하고 수동 태양 각도로 돌아간다. 이 수동 값은 월드 +Z=0°, +X=90°다.
+SampleScene의 Scenario Rules는 실제 1초당 0.08 게임시간을 진행해 48시간을 10분에 재생한다. Survival Session이 없는 씬에서는 `Animate Sun`과 `Sun Hours Per Second`를 사용한다. CSV가 없거나 손상되면 Inspector에서 오류를 표시하고 수동 태양 방향으로 돌아간다. 수동 값의 방위각은 월드 +Z=0°, +X=90°다.
 
 CSV의 날짜 표기는 연도-연중일이다. UTC로 해석했으며, CSV 자체에는 시간대·관측 지점의 위경도·좌표계·현지 지형 차폐 여부가 들어 있지 않다. 사용자 제공 Site6 추출 자료로 취급하고 별도 천체력 계산 또는 정확한 추출점 검증을 수행한 것으로 설명하지 않는다.
 
@@ -139,17 +142,17 @@ Directional Light.forward = -direction
 - URP 마스크는 **R=0(금속도), G=1(AO 미적용), B=원본 높이, A=1−선형 Roughness**로 패킹했다. 원본 러프니스가 매우 높아 매끈한 반사는 거의 없다. B는 저장만 하며 한 레이어에서 실제 정점 변위나 새 지형을 만들지 않는다.
 - 16개 Terrain은 프로젝트 전용 URP Terrain/Lit 재질, Draw Instanced, 픽셀별 지형 노멀, Pixel Error 3, Basemap Distance 3000m를 사용한다. 원본 고도·알파맵·Terrain Layer 참조는 보존한다.
 - 태양 색은 흰색, 태양 원반 0.53°, 작은 가독성 보조광 `Shadow Fill=0.025`를 사용한다. SampleScene의 태양은 URP 고품질 소프트 그림자를 사용한다. 별은 표면 노출과 독립적으로 항상 보인다.
-- SampleScene은 `Animate Sun`을 켜고 `Sun Update Seconds=1`로 설정했다. 태양 원반과 방향광은 실행 시간 1초 간격에 해당하는 CSV 시각으로 함께 갱신하며 지구는 공통 게임 시간을 계속 따른다. 값 0은 연속 이동이고 양수는 갱신 간격(초)이다. 현재 배속에서는 한 간격이 CSV의 72초다. 자동 재생을 끄면 시간 슬라이더의 시각을 바로 적용한다. 기초 상판의 자기 그림자 떨림은 해당 씬 인스턴스의 뒷면으로 그림자 맵을 생성해 줄였다.
+- 현재 Scenario Rules의 `Sun Update Seconds=1`은 CSV 시각 4분 48초마다 태양 원반과 방향광을 함께 갱신한다. 지구와 별은 공통 시계를 연속으로 따른다. 값 0은 연속 이동이며 양수는 실제 플레이 초 기준 갱신 간격이다.
 - PC URP 그림자 거리 12000m, 맵 4096, 캐스케이드 4개 분할 0.004/0.018/0.13을 사용한다. 가까운 구간은 약 48m까지 배정해 낮은 태양 아래 건물 그림자 경계 변화를 줄였다. 비교 렌더와 화면 밝기 변화 측정값은 `QA/MoonBase/ShadowStability`에 있다.
-- 최초 태양 고도가 약 1.55°라 기존 근접 검사 위치는 그늘에 들어간다. 밝게 보이도록 태양 고도를 임의로 올리지 않았다. 테스트 이미지는 그늘·햇빛 받는 능선·전체 지형을 각각 포함한다.
+- 2022년 임무의 48시간 동안 태양은 지평선 아래다. 이 구간의 태양 Directional Light 강도는 0이며 지형과 기지는 기존 보조광과 자체 조명으로 보인다.
 
 ## 검증과 재실행
 
-최신 검증 메뉴는 `Tools > Moon Environment > Validate Celestial Sky and Motion`, `Validate Celestial Play Mode`다. 천체력/화면/좌표/GPU 검사 **47개**, 실제 Editor Play 검사 **8개**, 기존 표면·수동 회전 회귀 검사 **34개**를 통과했다. 새 결과는 `QA/Celestial`, 기존 회귀 결과는 `QA/Environment`에 있다. 상세 수치와 재현 조건은 `QA/Celestial/VALIDATION.md`를 따른다. `Apply Offline Celestial Sky`는 새 모드·큐브맵을 연결하는 설정 메뉴이고 검증 메뉴와 구분한다.
+2022년 임무 기간의 Unity Play 검사 및 JPL Horizons 대조는 `QA/Celestial/2022-08-25/VALIDATION.md`에 있다. 검증 메뉴는 `Tools > Moon Environment > Validate Celestial Sky and Motion`, `Validate Celestial Play Mode`다. 기존 2026년 기간의 검사 기록은 `QA/Celestial/VALIDATION.md`를 따른다.
 
 `Tools > Moon Environment > Validate and Render`는 Editor 검사와 1280×720/1920×1080 렌더를 실행한다. `Validate Play Mode`는 실제 Editor Play 모드에 들어가 CSV 재로드·회전·시간 진행·마지막 시각 고정을 검사한 뒤 편집 모드로 복귀한다. Play 모드 변경값은 저장하지 않는다.
 
-앞선 표면 개선의 검증 기록은 프로젝트 루트 `QA/Environment`에 있다. 그때의 Editor Play 검사 8개와 이번 천체력 Play 검사 8개는 별도 기록이다. 이번에 기존 수동 회전/표면 검사도 34개 재실행해 통과했다. 게임 빌드·실장치·사용자의 전체 키보드/마우스 플레이 테스트와 구분한다. Inspector 드래그/Scene 고리는 코드와 컴파일을 확인했으며 자동 동작 검사는 공개 회전 API 경로를 사용했다.
+앞선 표면 개선의 검증 기록은 프로젝트 루트 `QA/Environment`에 있다. 이 기록은 2026년 기간으로 실행한 Editor 검사 결과다.
 
 원본 TerrainData 16개와 텍스처 4개는 SHA-256이 작업 전과 일치한다. 기존 Main Camera와 Terrain/root Transform도 보존했다. `Before`에는 작업 시작 시 씬·스크립트·설정 사본이 있다. 최초 before 렌더는 카메라 기본 aspect를 사용했고 최종 렌더는 명시적 16:9이므로 픽셀 단위 비교 자료로 사용하지 않는다.
 

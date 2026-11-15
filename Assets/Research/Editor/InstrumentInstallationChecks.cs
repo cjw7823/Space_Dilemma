@@ -80,6 +80,7 @@ static class InstrumentInstallationChecks
         InputSystem.settings.editorInputBehaviorInPlayMode=InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
         foreach(var d in InputSystem.devices.ToArray())if(d is Keyboard||d is Mouse||d is Gamepad){suspended.Add(d);InputSystem.DisableDevice(d);}
         keyboard=InputSystem.AddDevice<Keyboard>();yield return Frames(8);
+        HudPlayValidation.EnterGameplay();
         var ui=UnityEngine.Object.FindFirstObjectByType<SampleCollectionPopup>();var interaction=ui.interaction;
         player=UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();
         ui.session.Scenario.time.gameHoursPerSecond=.02f;ui.session.Scenario.interaction.holdSeconds=.25f;

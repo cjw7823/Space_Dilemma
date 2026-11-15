@@ -38,6 +38,7 @@ namespace SpaceDilemma.CustomInput
         public void ToggleMenu()
         {
             if (!hub) return;
+            if (hub.CurrentContext && hub.CurrentContext.actionMap == "Scenery") return;
             if (hub.CurrentContext && hub.CurrentContext.blocksGameplay && !Owns(hub.CurrentContext)) return;
             if (hub.CurrentContext == hub.settings.ui) CloseMenu();
             else { uiToken = hub.PushContext(hub.settings.ui); Focus(solarButton); }
