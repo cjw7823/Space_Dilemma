@@ -51,15 +51,17 @@ namespace SpaceDilemma.Hud
         {
             var hub = InputHub.Active;
             if (!settings || !hub || !hub.player || !player || !canvas || !minimap || !pause || !pauseOverlay || !pauseButton ||
-                !continueButton || !clockLabel || !objectiveTitle || !objectiveDescription || !objectiveProgress ||
-                !controlsPanel || !controlsPrimary || !controlsSecondary)
+                !continueButton || !clockLabel)
             { Debug.LogError("Space HUD is missing a scene reference or the Custom Input system.", this); return; }
             minimap.Initialize(hub.player.transform);
             pause.Initialize(hub, settings.pauseContext, pauseOverlay, continueButton);
-            Objective.Changed += RefreshObjective;
-            if (gameSettings) gameSettings.LanguageChanged += RefreshObjective;
-            Objective.SetLocalized(exampleTitleEnglish, exampleDescriptionEnglish, objectiveTitle.text,
-                objectiveDescription.text, settings.exampleCurrent, settings.exampleTotal, true);
+            if (objectiveTitle && objectiveDescription && objectiveProgress)
+            {
+                Objective.Changed += RefreshObjective;
+                if (gameSettings) gameSettings.LanguageChanged += RefreshObjective;
+                Objective.SetLocalized(exampleTitleEnglish, exampleDescriptionEnglish, objectiveTitle.text,
+                    objectiveDescription.text, settings.exampleCurrent, settings.exampleTotal, true);
+            }
             RefreshClock();
         }
         void RefreshObjective()
@@ -86,8 +88,14 @@ namespace SpaceDilemma.Hud
         void RefreshClock()
         {
             if (!environment || environment.SunTable == null) { clockLabel.text = "--:--:--"; return; }
-            DateTime time = environment.SunTable.StartUtc.AddHours(environment.sunHoursFromStart);
-            clockLabel.text = time.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+            clockLabel.text = FormatElapsedTime(environment.sunHoursFromStart);
+        }
+
+        public static string FormatElapsedTime(double hours)
+        {
+            long seconds = (long)Math.Floor(Math.Max(0, hours) * 3600 + 1e-6);
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}",
+                seconds / 3600, seconds / 60 % 60, seconds % 60);
         }
         void OnDestroy()
         {

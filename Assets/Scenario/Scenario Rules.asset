@@ -1,0 +1,164 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 350e337f3f83e2943a7aab7159bd3cb8, type: 3}
+  m_Name: Scenario Rules
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDilemma.Scenario.ScenarioRules
+  time:
+    durationHours: 48
+    gameHoursPerSecond: 0.08
+    speStartHour: 24
+    speDurationHours: 0
+    sunUpdateSeconds: 1
+  radiation:
+    normalRate: 0.1
+    speRate: 3
+    lethalDose: 50
+    indoorTransmission: 0.35
+    maximumReduction: 0.8
+  interaction:
+    researchRange: 2
+    holdSeconds: 1.25
+    resetWhenInterrupted: 1
+    consoleRange: 2
+    indoorSampleHeight: 1
+  power:
+    availableWatts: 1000
+    lifeSupportWatts: 250
+    shieldMaximumWatts: 500
+    initialShieldOutput: 0
+  preservation:
+    outageGraceHours: 0.5
+    qualityLossPerHour: 0.15
+    minimumUsableQuality: 0.25
+  samples:
+    targetData: 72
+    maximumPercent: 100
+    scoreWeight: 1
+    supplyPriority: 0
+    initialRequestedWatts: -1
+    first:
+      watts: 60
+      priority: 0
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+    second:
+      watts: 70
+      priority: 1
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+    third:
+      watts: 80
+      priority: 2
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+  instruments:
+    targetData: 72
+    maximumPercent: 100
+    scoreWeight: 1
+    supplyPriority: 1
+    initialRequestedWatts: -1
+    first:
+      watts: 40
+      priority: 0
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+    second:
+      watts: 50
+      priority: 1
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+    third:
+      watts: 60
+      priority: 2
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+  plants:
+    targetData: 72
+    maximumPercent: 100
+    scoreWeight: 1
+    supplyPriority: 2
+    initialRequestedWatts: -1
+    first:
+      watts: 70
+      priority: 0
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+    second:
+      watts: 80
+      priority: 1
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+    third:
+      watts: 90
+      priority: 2
+      unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+      initiallyRequested: 1
+      initiallyCompleted: 0
+      initiallyValid: 1
+      initialData: 0
+  start:
+    elapsedHours: 0
+    dose: 0
+    sampleOneCollected: 0
+    sampleTwoCollected: 0
+    sampleThreeCollected: 0
+    firstSlot:
+      sample: 0
+      quality: 1
+    secondSlot:
+      sample: 0
+      quality: 1
+    thirdSlot:
+      sample: 0
+      quality: 1

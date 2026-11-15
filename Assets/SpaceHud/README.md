@@ -66,3 +66,14 @@ Esc 또는 Pause 버튼은 일시정지/재개, Tab은 커서 잠금 해제, F2�
 ## 검증
 
 `Tools > Space HUD > Run Play Validation`은 현재 열린 SampleScene을 저장하거나 다시 열지 않고 Editor Play 검사를 수행합니다. 결과와 화면 렌더는 `QA/SpaceHud`에 저장합니다. 가상 입력 및 카메라 렌더 결과와 실제 하드웨어·독립 실행 빌드 검증은 구분합니다.
+
+## 최종 결과 (STEP 6)
+
+SampleScene의 Survival Session/FinalEvaluation과 HUD Canvas/Final Result Overlay를 사용한다. 48시간 종료·조기 사망 시 최종 연구/생존 결과를 표시하며, 설정·ESC 메뉴를 닫아도 종료 상태를 유지한다. 설정과 구조는 Assets/Survival/STEP6.md, 검증은 QA/ResultStep6/VALIDATION.md를 따른다. 이후 UI도 씬에 직접 배치한다.
+
+
+## 연구 달성도와 방사선 피폭도
+
+SampleScene의 `Space HUD / HUD Canvas / Research Gauge`와 `Radiation Gauge`는 직접 편집할 수 있는 세로 카드다. 파란 카드의 숫자는 시료 채취·보존, 측정장비, 식물 재배의 가중 합산 점수이며 결과 화면에도 같은 계산을 사용한다. 붉은 카드는 누적 피폭량을 게임의 위험 기준 대비 퍼센트로 보여주며 mSv 값도 아래에 표시한다.
+
+Project 창에서 `Assets/Survival/Evaluation Rules.asset`을 열면 Inspector에서 세 미션의 비중을 입력할 수 있다. 예를 들어 40, 35, 25를 입력하면 실제 반영 비율은 40%, 35%, 25%다. 입력 합계가 다르면 같은 상대 비율을 유지하며 100%로 환산한다. 세 값이 모두 0이면 동일 비중을 사용한다. 설정은 다음 Play부터 적용된다. 장치별 데이터 수집 속도는 `Research Data Rules - Test Values.asset`에서 조절한다.

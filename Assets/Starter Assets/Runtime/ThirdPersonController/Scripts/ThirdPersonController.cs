@@ -91,6 +91,8 @@ namespace StarterAssets
         private float _targetRotation = 0.0f;
         private float _rotationVelocity;
         private float _verticalVelocity;
+        private float _airborneSpeed;
+        private bool _airborneSpeedLocked;
         private float _terminalVelocity = -53.0f;
 
         // timeout deltatime
@@ -178,6 +180,8 @@ namespace StarterAssets
             _cinemachineTargetYaw = angles.y;
             _cinemachineTargetPitch = Mathf.DeltaAngle(CameraAngleOverride, angles.x);
             _verticalVelocity = 0f;
+            _airborneSpeed = 0f;
+            _airborneSpeedLocked = false;
         }
 
         private void AssignAnimationIDs()
@@ -305,6 +309,16 @@ namespace StarterAssets
             if (dt <= 0f) return;
 
             bool moving = _input.move.sqrMagnitude > 0.0001f;
+            // The last grounded displacement determines the speed for this flight.
+            // Use the actual capsule contact because the ground probe also detects nearby ground during takeoff.
+            if (_controller.isGrounded && _verticalVelocity <= 0f)
+                _airborneSpeedLocked = false;
+            else if (!_airborneSpeedLocked)
+            {
+                Vector3 velocity = _controller.velocity;
+                _airborneSpeed = new Vector2(velocity.x, velocity.z).magnitude;
+                _airborneSpeedLocked = true;
+            }
             Vector3 horizontal = Vector3.zero;
             if (moving)
             {
@@ -319,7 +333,8 @@ namespace StarterAssets
                 float inputMagnitude = _input.analogMovement ? Mathf.Clamp01(_input.move.magnitude) : 1f;
                 float targetSpeed = (_input.sprint ? SprintSpeed : MoveSpeed) * inputMagnitude;
                 float forwardSpeed = Mathf.Max(0f, Vector3.Dot(_controller.velocity, transform.forward));
-                float speed = Mathf.Lerp(forwardSpeed, targetSpeed, 1f - Mathf.Exp(-SpeedChangeRate * dt));
+                float speed = _airborneSpeedLocked ? _airborneSpeed :
+                    Mathf.Lerp(forwardSpeed, targetSpeed, 1f - Mathf.Exp(-SpeedChangeRate * dt));
                 horizontal = transform.forward * (speed * alignment);
             }
 

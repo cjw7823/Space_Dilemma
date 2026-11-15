@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b34a0b944a1b6264a8732a84e051a3f9, type: 3}
+  m_Name: Research Data Rules - Test Values
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDilemma.Research.ResearchDataRules
+  samples:
+    targetData: 72
+    maximumPercent: 100
+    devices:
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+  instruments:
+    targetData: 72
+    maximumPercent: 100
+    devices:
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+  plants:
+    targetData: 72
+    maximumPercent: 100
+    devices:
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1
+    - unitsPerGameHour: 1
+      maximumData: 24
+      contribution: 1

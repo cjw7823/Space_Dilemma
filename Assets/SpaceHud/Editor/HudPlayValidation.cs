@@ -6,6 +6,11 @@ using System.Linq;
 using HeyHeyThere.PixelUISciFiFree;
 using SpaceDilemma.CustomInput;
 using SpaceDilemma.Hud;
+using SpaceDilemma.Power;
+using SpaceDilemma.Research;
+using SpaceDilemma.Results;
+using SpaceDilemma.Scenario;
+using SpaceDilemma.Survival;
 using StarterAssets;
 using TMPro;
 using UnityEditor;
@@ -28,11 +33,29 @@ static class HudPlayValidation
     static float deadline;
     static Keyboard keyboard;
     static Mouse mouse;
+    static MoonBasePlayer validationPlayer;
+    static readonly List<InputDevice> suspendedDevices = new List<InputDevice>();
     static InputSettings.EditorInputBehaviorInPlayMode originalEditorInput;
     static InputSettings.BackgroundBehavior originalBackground;
-    static bool savedInputSettings;
+    static bool savedInputSettings, savedBackgroundRun, originalBackgroundRun;
 
     static HudPlayValidation() { EditorApplication.update += Update; }
+    [MenuItem("Tools/Space HUD/Run Result Survival Validation")]
+    public static void ResultSurvival() => RunResults(false);
+    [MenuItem("Tools/Space HUD/Run Result Death Validation")]
+    public static void ResultDeath() => RunResults(true);
+    public static void RunResults(bool death)
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Stop Play mode first.");
+        SessionState.SetString("SpaceHud.ResultsMode", death ? "death" : "survival");
+        Run();
+    }
+    [MenuItem("Tools/Space HUD/Run SPE Play Validation")]
+    public static void RunSpe()
+    {
+        SessionState.SetBool("SpaceHud.SpeOnly", true);
+        Run();
+    }
     [MenuItem("Tools/Space HUD/Run Play Validation")]
     public static void Run()
     {
@@ -51,9 +74,15 @@ static class HudPlayValidation
         lastFrame = Time.frameCount;
         try
         {
+            // Keep the Play-only synthetic-input fixture independent of Editor window focus.
+            if (validationPlayer && !Application.isFocused)
+            {
+                validationPlayer.SendMessage("OnApplicationFocus", true);
+                if (InputHub.Active && InputHub.Active.GameplayAllowed) validationPlayer.SetControlCaptured(true);
+            }
             if (routines.Count == 0)
             {
-                checks.Clear(); errors.Clear(); failures = 0; deadline = Time.realtimeSinceStartup + 120;
+                checks.Clear(); errors.Clear(); failures = 0; deadline = Time.realtimeSinceStartup + 480;
                 Application.logMessageReceived += OnLog; routines.Push(Cases());
             }
             if (Time.realtimeSinceStartup > deadline) throw new TimeoutException("HUD play validation timed out");
@@ -89,21 +118,82 @@ static class HudPlayValidation
     }
     static IEnumerator Cases()
     {
+        originalBackgroundRun = Application.runInBackground; savedBackgroundRun = true; Application.runInBackground = true;
         yield return Wait(.6f);
         var hud = HudController.Active; var hub = InputHub.Active;
         var player = UnityEngine.Object.FindFirstObjectByType<MoonBasePlayer>();
+        validationPlayer = player;
         var environment = UnityEngine.Object.FindFirstObjectByType<LunarEnvironment>();
+        var survival = UnityEngine.Object.FindFirstObjectByType<SurvivalSession>();
+        if (survival && survival.Scenario)
+        {
+            Check(true, $"Live scenario clock before regression setup: {survival.Scenario.time.gameHoursPerSecond} game h/s");
+            CheckScenario(survival);
+            survival.Scenario.time.gameHoursPerSecond = .02f;
+        }
+        else if (survival)
+        {
+            // Keep the regression run at its original simulation speed even when the open
+            // Inspector has an accelerated game clock for manual testing.
+            var survivalData = new SerializedObject(survival);
+            var rulesProperty = survivalData.FindProperty("rules");
+            var testRules = UnityEngine.Object.Instantiate((SurvivalRules)rulesProperty.objectReferenceValue);
+            Check(true, $"Live simulation speed before regression setup: {testRules.gameHoursPerSecond} game h/s");
+            testRules.gameHoursPerSecond = .02f;
+            testRules.hideFlags = HideFlags.DontSave;
+            rulesProperty.objectReferenceValue = testRules;
+            survivalData.ApplyModifiedPropertiesWithoutUndo();
+        }
+        Check(survival && survival.Run != null && survival.IsInside, "Survival run starts and detects the player's indoor spawn");
+        if (survival && survival.Run != null && player)
+        {
+            Check(player.rover && !survival.Contains(player.rover.transform.position + Vector3.up), "Parked rover is outside the base radiation volumes");
+            Check(Math.Abs(environment.sunHoursFromStart - survival.Run.Hours) < .00001, "Survival time is shared with the celestial environment");
+        }
         Check(SessionState.GetBool("SpaceHud.Authored", false) && hud && hub && player && environment, "HUD already exists in SampleScene before Play; existing player, input and common clock available");
         if (!hud || !hub || !player || !environment || !hud.Minimap || !hud.Pause) yield break;
         Check(hub.Serial.Status == SerialConnectionStatus.Disconnected, "Validation does not open or reset the configured COM device");
+        var board = hud.Canvas.transform.Find("Mission Board");
+        Check(board && hud.ObjectiveTitle.transform.IsChildOf(board) && board.Find("Progress Track") &&
+            board.Find("Power Interaction Prompt"), "One authored Mission Board owns objective and interaction displays");
+        Check(new[] { hud.ObjectiveTitle.Text, hud.ObjectiveDescription.Text, hud.ObjectiveProgress.Text }.All(label =>
+        {
+            label.ForceMeshUpdate();
+            return label.textInfo.characterInfo.Take(label.textInfo.characterCount).Any(character => character.isVisible);
+        }), "The compact Mission Board renders visible glyphs for all three objective labels");
         originalEditorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
         originalBackground = InputSystem.settings.backgroundBehavior; savedInputSettings = true;
         InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
         InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+        // These commands affect Unity's input devices only; OS keyboard/mouse stay usable.
+        suspendedDevices.Clear();
+        foreach (var device in InputSystem.devices.ToArray())
+            if (device.enabled && (device is Keyboard || device is Mouse || device is Gamepad))
+            { suspendedDevices.Add(device); InputSystem.DisableDevice(device); }
         keyboard = InputSystem.AddDevice<Keyboard>("HUD validation keyboard");
         mouse = InputSystem.AddDevice<Mouse>("HUD validation mouse"); Keys(); MouseAt(Vector2.zero);
         yield return Wait(.3f);
         player.SendMessage("OnApplicationFocus", true);
+        string resultsMode = SessionState.GetString("SpaceHud.ResultsMode", "");
+        if (resultsMode.Length > 0)
+        {
+            SessionState.SetString("SpaceHud.ResultsMode", "");
+            if (resultsMode != "death") yield return ResearchStepChecks.Run(player, hub, hud.Pause, Keys, Check);
+            yield return FinalStepChecks.Run(hud, survival, resultsMode == "death", Keys, Check, Capture);
+            Check(errors.Count == 0, "No Unity errors during result validation: " + string.Join(" | ", errors));
+            yield break;
+        }
+        if (SessionState.GetBool("SpaceHud.SpeOnly", false))
+        {
+            SessionState.SetBool("SpaceHud.SpeOnly", false);
+            yield return ResearchStepChecks.Run(player, hub, hud.Pause, Keys, Check);
+            yield return SpeStepChecks.Run(hud, player, survival, Keys, Check, Capture);
+            if (survival) SurvivalStepChecks.Run(survival, environment, Check);
+            ResearchDataStepChecks.AfterEnd(Check);
+        FinalStepChecks.AfterEnd(Check);
+            Check(errors.Count == 0, "No Unity errors during focused SPE validation: " + string.Join(" | ", errors));
+            yield break;
+        }
         Check(UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == SessionState.GetInt("SpaceHud.Terrains", -1), "Existing terrain count unchanged during Play");
         Check(Camera.main && Camera.main != hud.Minimap.MapCamera && hud.Minimap.MapCamera.targetTexture == hud.Minimap.Texture, "Separate orthographic minimap camera and RenderTexture; main camera unchanged");
         Check(hud.Minimap.MapCamera.orthographic && hud.Minimap.MapCamera.clearFlags == CameraClearFlags.SolidColor && (hud.Minimap.MapCamera.cullingMask & (1 << LayerMask.NameToLayer("UI"))) == 0, "Minimap excludes skybox and UI layer");
@@ -157,9 +247,12 @@ static class HudPlayValidation
         yield return Wait(.2f);
         Check(!hub.GameplayAllowed && !player.ControlCaptured && Cursor.lockState == CursorLockMode.None, "Pause context blocks player input and unlocks cursor");
         startHours = environment.sunHoursFromStart; before = player.transform.position;
+        double pausedDose = survival ? survival.Run.Dose : 0;
         Quaternion cameraBefore = Camera.main.transform.rotation; Keys(Key.W); MouseAt(new Vector2(400, 300), true);
         yield return Wait(.3f); Keys(); MouseAt(new Vector2(400, 300));
         Check(Mathf.Approximately(environment.sunHoursFromStart, startHours), "Simulation clock remains stopped during pause");
+        if (survival) Check(survival.IsPaused && survival.Run.Outcome == SurvivalOutcome.Running &&
+            survival.Run.Dose == pausedDose, "Pause preserves dose and keeps the run active");
         Check(Vector3.Distance(before, player.transform.position) < .001f && Quaternion.Angle(cameraBefore, Camera.main.transform.rotation) < .01f, "Player and camera stay still despite synthetic paused input");
         Capture(hud, 1920, 1080, "pause-1920.png"); Capture(hud, 1280, 720, "pause-1280.png");
         bool wasPaused = hud.Pause.IsPaused;
@@ -182,11 +275,56 @@ static class HudPlayValidation
         Keys(Key.Backspace); yield return Wait(.15f); Keys(); yield return Wait(.15f);
         Check(!demo.IsVisible && hub.GameplayAllowed, "Backspace closes the existing example UI without invoking Pause");
         yield return CheckSettings(hud, hub);
+        yield return AirSpeedClockChecks.Run(player, survival, environment, hud, Keys, Check);
+        ResearchDataStepChecks.BeforeInteractions(Check);
+        yield return ResearchStepChecks.Run(player, hub, hud.Pause, Keys, Check);
+        yield return ResearchDataStepChecks.Run(survival, hud.Pause, Check);
+        var evaluation = survival.GetComponent<FinalEvaluation>();
+        double researchPercent = evaluation.Weights.OverallPercent(evaluation.research.Ledger);
+        double radiationPercent = Math.Clamp(survival.Run.Dose / survival.Run.DoseLimit * 100, 0, 100);
+        Check(GaugeMatches(hud.Canvas.transform.Find("Research Gauge"), "Research Percent", researchPercent),
+            "Blue vertical gauge and percent reflect the weighted research ledger");
+        Check(GaugeMatches(hud.Canvas.transform.Find("Radiation Gauge"), "Radiation Percent", radiationPercent),
+            "Red vertical gauge and percent reflect current dose relative to the configured danger limit");
+        Capture(hud, 1280, 720, "research-data-1280.png");
+        Capture(hud, 1920, 1080, "research-data-1920.png");
+        yield return PowerStepChecks.Run(hud, player, survival, Keys, Check, Capture);
+        yield return SpeStepChecks.Run(hud, player, survival, Keys, Check, Capture);
+        FinalStepChecks.Pure(Check);
         Time.timeScale = .6f; hud.Pause.Pause(); yield return Wait(.15f);
         UnityEngine.Object.Destroy(hud.gameObject); yield return Wait(.2f);
         Check(Mathf.Approximately(Time.timeScale, .6f) && hub.GameplayAllowed, "Destroying a paused HUD restores its prior time scale and input context");
         Time.timeScale = 1;
+        if (survival) SurvivalStepChecks.Run(survival, environment, Check);
+        ResearchDataStepChecks.AfterEnd(Check);
+        FinalStepChecks.AfterEnd(Check);
         Check(errors.Count == 0, "No Unity errors during HUD Play validation: " + string.Join(" | ", errors.Select(e => e.Split('\n')[0])));
+    }
+
+    static bool GaugeMatches(Transform card, string valueName, double percent)
+    {
+        if (!card) return false;
+        var fill = card.Find("Track/Fill Area/Fill") as RectTransform;
+        var value = card.Find(valueName)?.GetComponent<TMP_Text>();
+        string expectedText = percent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "%";
+        return fill && value && fill.anchorMin == Vector2.zero &&
+            Mathf.Abs(fill.anchorMax.y - (float)(percent / 100)) < .002f && value.text == expectedText;
+    }
+
+    static void CheckScenario(SurvivalSession session)
+    {
+        var config = session.Scenario;
+        var source = (ScenarioRules)new SerializedObject(session).FindProperty("scenario").objectReferenceValue;
+        var power = UnityEngine.Object.FindFirstObjectByType<BasePowerController>();
+        var results = UnityEngine.Object.FindFirstObjectByType<FinalEvaluation>();
+        var research = UnityEngine.Object.FindFirstObjectByType<ResearchInteraction>();
+        Check(source && config != source && !EditorUtility.IsPersistent(config),
+            "SampleScene plays using a session copy of one authored Scenario Rules asset");
+        Check(power && results && research && power.Scenario == config &&
+            Math.Abs(power.Budget.Available - config.power.availableWatts) <= .000001 &&
+            Math.Abs(results.Weights.Samples - config.GetResearchWeights().Samples) <= .000001 &&
+            Math.Abs(research.HoldSeconds - config.interaction.holdSeconds) <= .000001,
+            "Power budget, research interaction and scoring read the same scenario profile");
     }
 
     static IEnumerator CheckSettings(HudController hud, InputHub hub)
@@ -327,20 +465,44 @@ static class HudPlayValidation
         var camera = Camera.main; var canvas = hud.Canvas; var pixel = canvas.GetComponent<PixelCanvas>();
         var scaler = canvas.GetComponent<CanvasScaler>(); var mode = canvas.renderMode; var world = canvas.worldCamera;
         var oldTarget = camera.targetTexture; var oldActive = RenderTexture.active; float oldAspect = camera.aspect, oldDistance = canvas.planeDistance, oldScale = scaler.scaleFactor;
+        Vector3 oldPosition = camera.transform.position; Quaternion oldRotation = camera.transform.rotation;
+        int oldMask = camera.cullingMask; var oldClear = camera.clearFlags; var oldBackground = camera.backgroundColor;
+        var urp = camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+        bool oldPost = urp && urp.renderPostProcessing;
         var target = RenderTexture.GetTemporary(width, height, 24); var image = new Texture2D(width, height, TextureFormat.RGB24, false);
         try
         {
             pixel.enabled = false; scaler.scaleFactor = Mathf.Max(1, height / 360);
+            if (name.StartsWith("result-"))
+            {
+                // Preview the authored Overlay UI at the origin: avoid both terrain-scale
+                // floating-point error and world geometry occluding the offscreen UI plane.
+                camera.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = Color.black;
+                if (urp) urp.renderPostProcessing = false;
+            }
+            // Set the camera pose before binding it: camera-space canvas placement is cached.
+            camera.targetTexture = target; camera.aspect = (float)width / height;
             canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = 1;
-            camera.targetTexture = target; camera.aspect = (float)width / height; Canvas.ForceUpdateCanvases(); camera.Render();
+            // Rebuild newly re-enabled modal graphics after the temporary canvas/camera size switch.
+            foreach (var graphic in canvas.GetComponentsInChildren<Graphic>()) graphic.SetAllDirty();
+            Canvas.ForceUpdateCanvases();
+            foreach (var text in canvas.GetComponentsInChildren<TMP_Text>()) text.ForceMeshUpdate();
+            camera.Render();
             RenderTexture.active = target; image.ReadPixels(new Rect(0, 0, width, height), 0, 0); image.Apply();
             File.WriteAllBytes(Output + "/" + name, image.EncodeToPNG());
-            Check(image.GetPixels32().Any(c => c.r > 20 || c.g > 20 || c.b > 20), "Scene and HUD render captured at " + width + "x" + height + ": " + name);
+            var pixels = image.GetPixels32();
+            bool content = pixels.Any(c => c.r > 20 || c.g > 20 || c.b > 20);
+            if (name.StartsWith("result-")) content &= pixels.Select(c => (c.r/16,c.g/16,c.b/16)).Distinct().Take(17).Count() > 16;
+            Check(content, (name.StartsWith("result-") ? "Result UI" : "Scene and HUD") + " render captured at " + width + "x" + height + ": " + name);
         }
         finally
         {
             canvas.renderMode = mode; canvas.worldCamera = world; canvas.planeDistance = oldDistance;
             camera.targetTexture = oldTarget; camera.aspect = oldAspect; RenderTexture.active = oldActive;
+            camera.transform.SetPositionAndRotation(oldPosition, oldRotation);
+            camera.cullingMask = oldMask; camera.clearFlags = oldClear; camera.backgroundColor = oldBackground;
+            if (urp) urp.renderPostProcessing = oldPost;
             scaler.scaleFactor = oldScale; pixel.enabled = true;
             RenderTexture.ReleaseTemporary(target); UnityEngine.Object.DestroyImmediate(image);
         }
@@ -351,7 +513,10 @@ static class HudPlayValidation
         if (savedInputSettings) { InputSystem.settings.editorInputBehaviorInPlayMode = originalEditorInput; InputSystem.settings.backgroundBehavior = originalBackground; }
         if (keyboard != null && keyboard.added) InputSystem.RemoveDevice(keyboard);
         if (mouse != null && mouse.added) InputSystem.RemoveDevice(mouse);
+        foreach (var device in suspendedDevices) if (device.added) InputSystem.EnableDevice(device);
+        suspendedDevices.Clear(); validationPlayer = null;
         Time.timeScale = 1;
+        if (savedBackgroundRun) { Application.runInBackground = originalBackgroundRun; savedBackgroundRun = false; }
         Directory.CreateDirectory(Output);
         File.WriteAllLines(Output + "/play-checks.txt", checks.Concat(new[] { $"RESULT checks={checks.Count} failures={failures}", "ERRORS:", string.Join("\n", errors) }));
         Debug.Log("HUD Play validation finished: " + (checks.Count - failures) + " passed, " + failures + " failed. See " + Output);

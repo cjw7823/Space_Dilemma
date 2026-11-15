@@ -12,10 +12,10 @@ public sealed class LunarEnvironment : MonoBehaviour
     public bool useSunAngleData;
     [Min(0)] public float sunHoursFromStart;
     public bool animateSun;
-    [Tooltip("Recorded hours per real second, only in Play mode. Stops at the last sample.")]
+    [Tooltip("Fallback hours per real second when no mission clock is connected. Stops at the last sample.")]
     [Min(0)] public float sunHoursPerSecond = 0.02f;
     [InspectorName("Sun Update Seconds")]
-    [Tooltip("Seconds between Sun disk and directional-light updates during playback. Earth follows the continuous game clock. Set to 0 for continuous Sun movement.")]
+    [Tooltip("Fallback Sun and shadow interval when no scenario is connected. Set to 0 for continuous Sun movement.")]
     [Min(0f)] public float shadowUpdateSeconds;
     [Tooltip("World yaw of local true north. South polar stereographic map: atan2(projected X, projected Y).")]
     public float trueNorthYaw;
@@ -113,9 +113,25 @@ public sealed class LunarEnvironment : MonoBehaviour
     }
 
     void OnValidate() { needsApply = true; }
+    float? sessionClockSpeed;
+    float? sessionSunUpdateSeconds;
+
+    public void SetSessionClock(double elapsedHours, float hoursPerSecond, float? sunUpdateSeconds = null)
+    {
+        sessionClockSpeed = hoursPerSecond;
+        sessionSunUpdateSeconds = sunUpdateSeconds;
+        sunHoursFromStart = (float)elapsedHours;
+    }
+
+    public void ReleaseSessionClock()
+    {
+        sessionClockSpeed = null;
+        sessionSunUpdateSeconds = null;
+    }
+
     void LateUpdate()
     {
-        if (Application.isPlaying && useSunAngleData && animateSun && SunTable != null)
+        if (Application.isPlaying && !sessionClockSpeed.HasValue && useSunAngleData && animateSun && SunTable != null)
             sunHoursFromStart = Mathf.Min((float)sunTable.DurationHours, sunHoursFromStart + Time.deltaTime * sunHoursPerSecond);
         // Also honors runtime changes made by other scripts, without allocating a material every frame.
         if (Application.isPlaying || needsApply) { Apply(); needsApply = false; }
@@ -241,11 +257,13 @@ public sealed class LunarEnvironment : MonoBehaviour
 
     double EvaluateSunSampleHours()
     {
-        if (!Application.isPlaying || !animateSun || !useSunAngleData || !(shadowUpdateSeconds > 0f) ||
-            !(sunHoursPerSecond > 0f) || sunTable == null || sunHoursFromStart >= sunTable.DurationHours)
+        float playbackSpeed = sessionClockSpeed ?? sunHoursPerSecond;
+        float updateSeconds = sessionSunUpdateSeconds ?? shadowUpdateSeconds;
+        if (!Application.isPlaying || (!animateSun && !sessionClockSpeed.HasValue) || !useSunAngleData || !(updateSeconds > 0f) ||
+            !(playbackSpeed > 0f) || sunTable == null || sunHoursFromStart >= sunTable.DurationHours)
             return sunHoursFromStart;
 
-        double stepHours = (double)sunHoursPerSecond * shadowUpdateSeconds;
+        double stepHours = (double)playbackSpeed * updateSeconds;
         return System.Math.Floor(sunHoursFromStart / stepHours) * stepHours;
     }
 

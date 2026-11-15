@@ -137,7 +137,7 @@ public static class MoonBaseValidation
             var target = p.thirdPersonCamera.Follow;
             var follow = p.thirdPersonCamera.GetComponent<CinemachineThirdPersonFollow>();
             float distance = Vector3.Dot(target.position - camera.transform.position, target.forward);
-            Check(brain.ActiveVirtualCamera == p.thirdPersonCamera, "First sampled frame uses the third-person camera");
+            Check(ReferenceEquals(brain.ActiveVirtualCamera, p.thirdPersonCamera), "First sampled frame uses the third-person camera");
             Check(distance >= 1.48f, $"Camera starts {distance:F2} m behind the character");
             Check(!Physics.CheckSphere(camera.transform.position, camera.nearClipPlane, follow.AvoidObstacles.CollisionFilter,
                 QueryTriggerInteraction.Ignore), "Starting camera near plane clears scene colliders");
@@ -159,7 +159,7 @@ public static class MoonBaseValidation
             case 2:
                 if(elapsed<.1f) return;
                 Keys();
-                Check(camera.GetComponent<CinemachineBrain>().ActiveVirtualCamera==p.thirdPersonCamera,"V leaves third-person camera active");
+                Check(ReferenceEquals(camera.GetComponent<CinemachineBrain>().ActiveVirtualCamera, p.thirdPersonCamera),"V leaves third-person camera active");
                 lookingBefore=motor.CinemachineCameraTarget.transform.rotation;
                 InputSystem.QueueStateEvent(mouse,new MouseState {delta=new Vector2(0,40)}); Next(3,p); break;
             case 3:

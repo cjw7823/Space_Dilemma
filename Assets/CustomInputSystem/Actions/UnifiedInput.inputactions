@@ -45,6 +45,15 @@
           "processors": "",
           "interactions": "",
           "initialStateCheck": false
+        },
+        {
+          "name": "ResearchInteract",
+          "type": "Button",
+          "id": "70abe6f8-860d-4eae-936a-aad7acb3b505",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false
         }
       ],
       "bindings": [
@@ -298,6 +307,17 @@
           "interactions": "",
           "groups": "",
           "action": "Interact",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
+        {
+          "name": "",
+          "id": "2ab328e5-1b76-43a9-bfcf-4fbe624bc826",
+          "path": "<Keyboard>/e",
+          "interactions": "",
+          "processors": "",
+          "groups": "",
+          "action": "ResearchInteract",
           "isComposite": false,
           "isPartOfComposite": false
         }

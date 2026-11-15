@@ -9,6 +9,7 @@ namespace SpaceDilemma.Hud
     public sealed class HudPauseManager : MonoBehaviour
     {
         public bool IsPaused { get; private set; }
+        public bool BlockExternalPause { get; set; }
         public GameObject Popup { get; private set; }
         InputHub hub;
         InputContextProfile profile;
@@ -34,7 +35,7 @@ namespace SpaceDilemma.Hud
         }
         void OnAction(ActionSignal signal)
         {
-            if (signal.map == "Global" && signal.action == "Pause" && signal.phase == InputActionPhase.Performed)
+            if (!BlockExternalPause && signal.map == "Global" && signal.action == "Pause" && signal.phase == InputActionPhase.Performed)
                 pendingToggle = true;
         }
         void Update()
@@ -84,7 +85,7 @@ namespace SpaceDilemma.Hud
 
         public void Pause()
         {
-            if (IsPaused) return;
+            if (IsPaused || BlockExternalPause) return;
             if (!hub || !profile) { Debug.LogWarning("HUD pause requires the Custom Input system and pause context."); return; }
             previousTimeScale = Time.timeScale;
             previousSelection = EventSystem.current ? EventSystem.current.currentSelectedGameObject : null;

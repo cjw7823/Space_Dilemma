@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2609f20e89117049a73214a1cfc9d3d, type: 3}
+  m_Name: Base Power Rules - Test Values
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDilemma.Power.PowerRules
+  availableWatts: 1000
+  lifeSupportWatts: 250
+  shieldMaximumWatts: 500
+  samples:
+    priority: 0
+    devices:
+    - watts: 60
+      priority: 0
+    - watts: 70
+      priority: 1
+    - watts: 80
+      priority: 2
+  instruments:
+    priority: 1
+    devices:
+    - watts: 40
+      priority: 0
+    - watts: 50
+      priority: 1
+    - watts: 60
+      priority: 2
+  plants:
+    priority: 2
+    devices:
+    - watts: 70
+      priority: 0
+    - watts: 80
+      priority: 1
+    - watts: 90
+      priority: 2

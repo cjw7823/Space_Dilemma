@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9892af208ad0dda4086a5dc4ef9fbd2a, type: 3}
+  m_Name: Apollo 16 - 65035-0
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDilemma.Research.LunarSampleInformation
+  sampleId: 65035-0
+  apolloMission: 16
+  classificationEnglish: Glass-Coated Dimict Breccia
+  classificationKorean: "\uC720\uB9AC\uC9C8\uB85C \uB36E\uC778 \uB450 \uC554\uC11D
+    \uC131\uBD84\uC758 \uAC01\uB825\uC554"
+  locationEnglish: Station 5, Descartes Highlands
+  locationKorean: "\uB370\uCE74\uB974\uD2B8 \uACE0\uC9C0, \uAD00\uCE21 \uC9C0\uC810
+    5"
+  descriptionEnglish: 'A breccia is made of broken rock pieces joined together. This
+    sample contains two main rock types.
+
+
+    NASA links its glass coating to the
+    impact that formed South Ray Crater about 2 million years ago. Melt from the
+    impact cooled into glass, trapping some lunar soil on the surface.'
+  descriptionKorean: "\uAC01\uB825\uC554\uC740 \uBD80\uC11C\uC9C4 \uB3CC \uC870\uAC01\uB4E4\uC774
+    \uB2E4\uC2DC \uBB49\uCE5C \uC554\uC11D\uC785\uB2C8\uB2E4. \uC774 \uC2DC\uB8CC\uC5D0\uB294
+    \uD06C\uAC8C \uB450 \uC885\uB958\uC758 \uC554\uC11D \uC131\uBD84\uC774 \uC11E\uC5EC
+    \uC788\uC2B5\uB2C8\uB2E4.\n\nNASA\uB294 \uC57D 200\uB9CC \uB144 \uC804 \uC0AC\uC6B0\uC2A4
+    \uB808\uC774 \uCDA9\uB3CC\uAD6C\uB97C \uB9CC\uB4E0 \uCDA9\uB3CC\uC774 \uC774
+    \uB3CC\uC744 \uC720\uB9AC\uC9C8\uB85C \uB36E\uC5C8\uB2E4\uACE0 \uC124\uBA85\uD569\uB2C8\uB2E4.
+    \uCDA9\uB3CC\uB85C \uB179\uC740 \uBB3C\uC9C8\uC774 \uC720\uB9AC\uCC98\uB7FC \uAD73\uC744
+    \uB54C, \uACE0\uC6B4 \uB2EC \uD759\uB3C4 \uD45C\uBA74\uC5D0 \uB2EC\uB77C\uBD99\uC5C8\uC2B5\uB2C8\uB2E4."
+  sourceUrl: https://ares.jsc.nasa.gov/astromaterials3d/sample-details.htm?sample=65035-0
