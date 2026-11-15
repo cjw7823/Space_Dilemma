@@ -60,6 +60,7 @@ public static class LunarStarDesignValidation
             env.starCubemap=cube; env.Apply();
             mask=new Material(RenderSettings.skybox) {hideFlags=HideFlags.HideAndDontSave};
             mask.SetFloat("_StarBrightness",0); mask.SetFloat("_EarthBrightness",1);
+            mask.SetFloat("_EarthEmission",0);
             mask.SetTexture("_EarthTex",Texture2D.whiteTexture);
             mask.SetVector("_SunDirection",-env.EarthDirection);
             mask.SetVector("_EarthSunDirection",-env.EarthDirection);

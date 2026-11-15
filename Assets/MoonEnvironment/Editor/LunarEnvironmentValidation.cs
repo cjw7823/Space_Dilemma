@@ -242,11 +242,11 @@ public static class LunarEnvironmentValidation
         Check(SunAngleTable.TryParse(env.sunAngleCsv.text, out var table, out _), "Parse supplied CSV");
         Check(table.Count == 51 && Near((float)table.DurationHours, 48), "51 records spanning 48 hours");
         var first = table.Evaluate(0); var last = table.Evaluate(48); var middle = table.Evaluate(0.48);
-        Check(first.utc == new DateTime(2022,8,25,20,48,0,DateTimeKind.Utc), "Day-of-year 237 -> Aug 25 UTC");
-        Check(Near(first.azimuth,154.816995f) && Near(first.elevation,-5.390978f), "Exact first solar angles");
-        Check(Near(last.azimuth,130.280402f) && Near(last.elevation,-4.268556f), "Exact last solar angles");
-        Check(Near(middle.azimuth,(154.816995f+154.325639f)/2) &&
-              Near(middle.elevation,(-5.390978f-5.374971f)/2), "Interpolate between the first two records");
+        Check(first.utc == new DateTime(2024,3,21,15,33,0,DateTimeKind.Utc), "Leap-year day 81 -> March 21 UTC");
+        Check(Near(first.azimuth,2.976991f) && Near(first.elevation,4.724044f), "Exact first solar angles");
+        Check(Near(last.azimuth,338.580524f) && Near(last.elevation,4.382764f), "Exact last solar angles");
+        Check(Near(middle.azimuth,(2.976991f+2.488827f)/2) &&
+              Near(middle.elevation,(4.724044f+4.724827f)/2), "Interpolate between the first two records");
         Check(table.Evaluate(-10).utc == first.utc && table.Evaluate(100).utc == last.utc, "Clamp beyond CSV bounds");
         Check(!SunAngleTable.TryParse("Time,Elevation,Azimuth\n2026-366T00:00:00,1,2\n2027-001T00:00:00,2,3", out _, out _), "Reject invalid day-of-year");
         Check(!SunAngleTable.TryParse("Time,Elevation,Azimuth\n2026-318T00:00:00,NaN,2\n2026-319T00:00:00,1,3", out _, out _), "Reject nonfinite angle");
@@ -260,7 +260,7 @@ public static class LunarEnvironmentValidation
         Check(Near(env.AppliedAzimuth,first.azimuth) && Near(env.AppliedElevation,first.elevation), "Scene starts at first recorded sample");
         Check(Vector3.Angle(-env.sunlight.transform.forward,env.SunDirection)<0.02f, "Directional light matches CSV direction");
         Check(Vector3.Distance(RenderSettings.skybox.GetVector("_SunDirection"),env.SunDirection)<0.0001f, "Sky Sun direction matches directional light");
-        Check(env.sunlight.intensity==0, "Sun below the horizon gives no direct light");
+        Check(Near(env.sunlight.intensity,env.sunIntensity), "Sun above the horizon enables direct light");
         Check(RenderSettings.skybox != env.skyTemplate, "Private sky material does not overwrite template");
         Quaternion saved = env.EarthOrientation, placement = env.EarthPlacement;
         Vector3 oldSun = env.SunDirection;

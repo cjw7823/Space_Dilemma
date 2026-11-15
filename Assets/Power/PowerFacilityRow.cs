@@ -35,7 +35,10 @@ namespace SpaceDilemma.Power
                 bool on=b.Powered(facility,d);
                 string status=b.Abandoned(facility,d)?(en?"FORFEITED":"포기(영구)"):
                     on?"ON":!b.RequestedOn(facility,d)?"OFF":en?"NO POWER":"전력 부족";
-                deviceLabels[d].text=$"{d+1}: {b.Demand(facility,d):0.#} W  {status}";
+                string label=facility==1?
+                    (en?new[]{"Seismometer","Heat flow","Magnetometer"}[d]:new[]{"지진계","열류량","자력계"}[d]):
+                    (en?$"Channel {d+1}":$"채널 {d+1}");
+                deviceLabels[d].text=$"{label}  {b.Demand(facility,d):0.#} W  {status}";
                 indicators[d].color=on?new Color32(71,223,153,255):new Color32(227,100,83,255);
             }
         }

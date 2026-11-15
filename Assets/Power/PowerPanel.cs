@@ -87,7 +87,7 @@ namespace SpaceDilemma.Power
             if(!power || power.Budget==null || !title) return;
             var b=power.Budget;
             bool en=!language || language.English;
-            title.text=en?"BASE POWER CONTROL - TEST VALUES":"기지 전력 제어 — 임시 수치";
+            title.text=en?"BASE POWER CONTROL":"기지 전력 제어";
             totals.text=en?$"Available {b.Available:0.#} W   Used {b.Consumption:0.#} W   Free {b.Remaining:0.#} W\nLife support (protected) {b.EssentialSupplied:0.#}/{b.EssentialRequired:0.#} W":
                 $"총 전력 {b.Available:0.#} W   소비 {b.Consumption:0.#} W   잔여 {b.Remaining:0.#} W\n생명유지 (필수 보호) {b.EssentialSupplied:0.#}/{b.EssentialRequired:0.#} W";
             if(b.EssentialShortage) totals.text+=en?"\nWARNING: Essential supply shortage":"\n경고: 필수 생명유지 전력 부족";
@@ -95,9 +95,13 @@ namespace SpaceDilemma.Power
                 $"능동차폐  요청 {b.ShieldRequestedOutput:P0}  실제 {b.ShieldActualOutput:P0}  ({b.ShieldWatts:0.#} W)";
             shield.SetValueWithoutNotify((float)b.ShieldRequestedOutput);
             string reduction=shielding?$"{shielding.Reduction:P0}":"0%";
-            note.text=(en?"Rows: supplied / requested W. Tick = requested ON.\nPriority: life support > shield > facilities; smaller priority first.\n":
-                "시설: 실제 공급 / 요청 W. 체크 = 가동 요청.\n생명유지 → 차폐 → 시설 순, 낮은 우선순위 숫자부터 공급.\n")+
-                SpeHud.SampleLine(research,en)+"\n"+(en?$"Indoor SPE dose reduction: {reduction} (test model). Time continues.":$"실내 SPE 피폭 감소율 {reduction} (임시 모델). 시간은 계속 흐릅니다.");
+            note.text=(en?"Reference budgets: one cooler / one plant habitat. Three channels share each system.\n":
+                "기준 전력은 냉각기·재배시설 각 1세트를 세 채널에 나눈 값입니다.\n")+
+                (en?"During SPE, interrupted experiments are permanently forfeited. Earned data stays.\n":
+                "SPE 중 중단한 실험은 영구 포기됩니다. 기존 연구 데이터는 보존됩니다.\n")+
+                SpeHud.SampleLine(research,en)+"\n"+
+                (en?$"Indoor SPE reduction {reduction}. Life support > shield > research. Time continues.":
+                    $"실내 SPE 감소율 {reduction}. 생명유지 → 차폐 → 연구 순으로 공급. 시간은 계속 흐릅니다.");
             closeLabel.text=en?"CLOSE (Backspace)":"닫기 (Backspace)";
         }
         void OnDisable() { Close(); if(prompt) prompt.text=""; }

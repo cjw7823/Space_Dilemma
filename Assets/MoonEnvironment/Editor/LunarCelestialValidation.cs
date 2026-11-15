@@ -80,7 +80,7 @@ public static class LunarCelestialValidation
         Check(table.StartUtc==env.SunTable.StartUtc,"Earth and solar CSV share the same UTC origin");
         Check(Near(table.Observer.northYawDegrees,env.trueNorthYaw,0.001f),"Observer north basis matches projected map yaw");
         Check(Near(table.Observer.worldXMeters,9997.5f) && Near(table.Observer.worldZMeters,9997.5f),"Observer is existing terrain center");
-        Check(Near(table.Evaluate(0).earthDiameter,1.8214974f) && Near(table.Evaluate(172800).earthDiameter,1.8471356f),"Physical Earth diameters match the mission period");
+        Check(Near(table.Evaluate(0).earthDiameter,1.8072550f) && Near(table.Evaluate(172800).earthDiameter,1.7999595f),"Physical Earth diameters match the mission period");
         Check(table.Evaluate(-1).seconds==0 && table.Evaluate(double.PositiveInfinity).seconds==172800,"Clamp both ephemeris endpoints");
         Check(table.Evaluate(double.NaN).seconds==0,"Nonfinite requested time stays at start");
         Check(Quaternion.Angle(table.Evaluate(0).starsOrientation,table.Evaluate(172800).starsOrientation)>20,"Star sphere follows lunar orientation across 48 hours");

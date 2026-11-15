@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: LunarRegolithURP
-  m_Shader: {fileID: 4800000, guid: 69c1f799e772cb6438f56c23efccb782, type: 3}
+  m_Shader: {fileID: 4800000, guid: b415fea4e1ceb524fbaead6a3a21d58e, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -91,6 +91,11 @@ Material:
     - _EnableHeightBlend: 0
     - _EnableInstancedPerPixelNormal: 1
     - _HeightTransition: 0
+    - _LunarDetailCellMeters: 8
+    - _LunarDetailFadeEnd: 350
+    - _LunarDetailFadeStart: 80
+    - _LunarDetailStrength: 0.85
+    - _LunarMacroStrength: 0.18
     - _Metallic0: 0
     - _Metallic1: 0
     - _Metallic2: 0

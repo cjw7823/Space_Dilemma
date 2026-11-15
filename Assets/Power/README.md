@@ -4,7 +4,7 @@ SampleScene에 저장된 오브젝트를 사용한다. 런타임에 UI를 생성
 
 ## 사용
 
-- Hierarchy `Base Power Control/Interior Power Console`: 파란색 실내 콘솔. 근처에서 E를 누르면 열린다. 인접 연구 장치와 E키를 공유하므로 더 가까운 대상이 우선한다.
+- Hierarchy `Base Power Control/Interior Power Console`: 베이지 케이스와 청록색 화면을 가진 실내 콘솔. 상단의 World Space Canvas에 `ControlPanel` 표지가 있다. 근처에서 E를 누르면 열린다. 인접 연구 장치와 E키를 공유하므로 더 가까운 대상이 우선한다.
 - `Space HUD/HUD Canvas/Power Overlay/Power Window`: 편집 가능한 UI. 기본 비활성 상태이므로 편집할 때 Power Overlay를 켜서 확인하고, 실행 전 다시 끈다.
 - 차폐 슬라이더: 출력 요청 0~100%. 실제 공급 출력과 W를 따로 표시한다.
 - 연구시설 슬라이더: 시설별 전력 요청 W. 행 제목은 실제 소비 / 요청 W와 실제 ON 개수를 표시한다. 장치별 체크는 가동 요청, 녹색/빨강 표시는 실제 전원이다. OFF 또는 전력 부족 이유를 표시한다.
@@ -13,9 +13,21 @@ SampleScene에 저장된 오브젝트를 사용한다. 런타임에 UI를 생성
 
 ## 조절
 
-`Assets/Power/Base Power Rules - Test Values.asset`을 선택한다. Inspector의 Available Watts, Life Support Watts, Shield Maximum Watts 및 Samples/Instruments/Plants의 세 Devices 각각의 Watts/Priority를 편집한다. 시설 자체 Priority도 조절할 수 있다. 각 시설은 정확히 3개 정의를 유지한다. 설정은 실행 시작 시 복사되므로 다음 실행부터 적용된다. 플레이 중 UI 변경은 정의 에셋에 저장하지 않는다.
+SampleScene의 전력은 `Assets/Scenario/Scenario Rules.asset`에서 조절한다. 기지 전력의 총 가용 전력·생명유지·차폐 최대 소비전력과 각 미션의 세 장치 W·우선순위를 편집한다. 각 시설은 정확히 3개 정의를 유지한다. 설정은 실행 시작 시 복사되므로 다음 실행부터 적용된다. `Base Power Rules - Test Values.asset`은 시나리오를 연결하지 않은 호출의 기본값이다.
 
-기본값은 총 1000W / 생명유지 250W / 차폐 최대 500W, 보관소 60·70·80W, 측정장비 40·50·60W, 재배 구획 70·80·90W다. **모두 게임 테스트용 임시 수치이며 NASA 장치 규격이 아니다.** 기본은 차폐 0%, 모든 연구 장치 가동 요청이다.
+현재 가용 전력은 **1500 W**, 생명유지는 **250 W**, 차폐 최대 소비는 **500 W**다. 세 값은 게임 배분과 딜레마를 위한 설정이다. 차폐 0%에서 모든 연구 장치를 켜면 연구 **1147 W**와 생명유지 **250 W**를 합쳐 **1397 W**를 사용하고 **103 W**가 남는다. 차폐를 100%로 요청하면 연구에 공급할 수 있는 전력은 **750 W**다.
+
+| 시설 | 전체 요청 | 장치별 요청 | 근거와 적용 |
+| --- | --- | --- | --- |
+| 시료 보관소 | 395 W | 132 / 132 / 131 W | FROSTE 냉동기 운전점의 인버터 입력을 보관소 1세트에 차용하고 세 보관 채널에 게임용으로 나눈다. |
+| 측정장비 | 17 W | 지진계 10 / 열류량 탐침 5 / 자력계 2 W | NASA 자료의 장비별 예상 요구량을 현재 설치하는 세 종류에 대응시킨다. |
+| 식물 재배 | 735 W | 245 / 245 / 245 W | 기존 식물 설명 에셋의 재배장치 1세트 기준을 세 재배 구획에 게임용으로 나눈다. |
+
+보관소 395 W의 원자료 운전 조건은 80 K에서 순냉각 11 W다. 세 채널의 분할은 독립 냉동기 세 대의 측정값으로 해석할 수 없으며 실제 열부하·냉각 성능은 계산 범위에서 빠져 있다. [NASA FROSTE 자료](https://ntrs.nasa.gov/citations/20240004448)
+
+측정장비의 장비별 요구량은 제안된 달 과학장비의 예상값이다. README의 **29 W / 52 kg**는 여기에 운석 실험·전자기 탐사·중성자 검출기를 더한 여섯 종류의 합계다. 현재 세 장비의 합계는 **17 W**이고 통신·제어·히터 등 부가 부하는 포함하지 않는다. [NASA Science of the Moon, Table 1.5](https://ntrs.nasa.gov/api/citations/20205004514/downloads/Science%20of%20the%20Moon%20Chapter%2046%20v4.pdf#page=14)
+
+재배 전체 735 W는 `Assets/Research/Plant Experiment Information.asset`의 `referencePowerWatts`를 설정 작업에서 읽어 시나리오에 반영한다. 세 구획의 245 W는 그 합계를 보존하는 게임 배분이다. 팝업의 **28시간 40분·21.07 kWh**는 같은 에셋에서 계산하는 관찰시간과 기준 에너지다. [NASA Plant Habitat 설계 자료](https://www.nasa.gov/science-research/kennedy-engineers-designing-plant-habitat-for-space-station/)
 
 공급 순서는 생명유지 → 차폐 → 연구시설이다. 시설 및 장치 Priority는 작은 숫자부터, 동률이면 배열 순서부터 공급한다. 높은 우선순위의 요청 장치를 온전히 공급하지 못하면 그 시설의 후순위도 정지한다. 수동 OFF 장치는 건너뛴다. 시설의 실제 미사용분은 다음 시설에 사용할 수 있다. 분수 전력으로 연구 장치를 ON 처리하지 않는다.
 

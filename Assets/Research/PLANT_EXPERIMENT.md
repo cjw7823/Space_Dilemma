@@ -6,7 +6,7 @@ SampleScene의 `Space HUD / HUD Canvas / Plant Experiment Overlay`는 씬에 저
 
 공유 `SampleCollectionPopup` 제어기가 한 번에 한 설명창만 열고 기존 입력 컨텍스트와 시간 배율을 복원한다. 팝업 동안 게임 시계·피폭·시간 기반 연구 누적이 정지하며, 계속하기/Esc/Backspace로 닫으면 다시 흐른다. NASA 원문 버튼으로 브라우저를 열어도 설명창을 닫기 전까지 정지를 유지한다.
 
-## 전력 패널에서 재사용할 데이터
+## 전력 패널과 공유하는 데이터
 
 `Assets/Research/Plant Experiment Information.asset` (`PlantExperimentInformation`)에 다음 기준값이 있다.
 
@@ -19,7 +19,9 @@ SampleScene의 `Space HUD / HUD Canvas / Plant Experiment Overlay`는 씬에 저
 
 `ReferenceEnergyKwh`는 별도로 입력한 상수가 아니므로 전력·시간 값을 바꾸면 계산이 바뀐다. 20.58kWh는 735W × 28h 기준이다. 사용자의 28시간 40분 요청에 맞춰 팝업에서는 21.07kWh를 사용했다.
 
-현 단계에서 이 기준값은 팝업이 사용한다. 기존 Scenario Rules의 전력 요청, 연구 누적률, 점수 계산은 바꾸지 않았다. 이후 패널에서 이 에셋을 참조해 실제 공급 W와 가동 시간에 따라 에너지를 적분하는 규칙을 연결할 수 있다. 장치 1세트의 수치이므로 식물 오브젝트 개수만으로 3배를 적용하지 않는다.
+팝업과 전력 패널은 재배장치 1세트의 **735 W**를 공유한다. 설정 작업에서 이 에셋의 `referencePowerWatts`를 읽어 Scenario Rules의 세 재배 구획에 **245 W씩** 배분한다. 이 분할은 각 구획의 ON/OFF를 선택하기 위한 게임 규칙이며 NASA 원자료의 장치별 측정값을 뜻하지 않는다. 세 구획의 합계가 한 세트의 기준 전력과 일치한다.
+
+전력 패널은 실제 공급 W와 요청 W를 표시하며, 전력 공급 상태가 연구 누적을 제어한다. **21.07 kWh**는 기준 전력으로 28시간 40분 동안 연속 가동했을 때의 계산값이다. 실제 가동 중 전력량을 계산할 때는 공급 W에 가동 게임시간을 곱해 1000으로 나눈다. 기지 전체 전력과 나머지 두 시설의 출처·배분은 `Assets/Power/README.md`를 따른다.
 
 ## NASA 출처와 차용 범위
 

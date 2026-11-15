@@ -36,7 +36,7 @@ namespace SpaceDilemma.Survival
             bool inside=session.IsInside;
             bool en=!language || language.English;
             title.text=en?"SPE ALERT - SOLAR PARTICLE EVENT":"SPE 경고 — 태양 입자 이벤트";
-            string action=inside?(en?"Inside base: use E at the blue power console.":"기지 내부: 파란 전력 콘솔에 접근해 E키로 조작하세요."):
+            string action=inside?(en?"Inside base: press E at ControlPanel.":"기지 내부: ControlPanel에 접근해 E키로 조작하세요."):
                 (en?"RETURN TO BASE. Active shielding works only indoors.":"기지로 복귀하세요. 능동차폐는 기지 내부에서만 작동합니다.");
             double reduction=inside?shielding.Reduction:0;
             double safeHours=run.Rate>0?System.Math.Max(0,(run.DoseLimit-run.Dose)/run.Rate):double.PositiveInfinity;
