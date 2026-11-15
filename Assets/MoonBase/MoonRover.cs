@@ -11,6 +11,10 @@ public sealed class MoonRover : MonoBehaviour
     public Transform cameraTarget;
     public Transform driverSeat;
     public Transform model;
+    [Header("Driving audio")]
+    [Tooltip("Looping movement sound authored on the rover in the scene.")]
+    public AudioSource driveAudio;
+    [Min(0f)] public float audioMovementThreshold = .1f;
     public float CameraDistance => 8f;
 
     BoxCollider chassis;
@@ -30,6 +34,14 @@ public sealed class MoonRover : MonoBehaviour
         Physics.SyncTransforms();
         if (TryGround(transform.position, 100f, 1000f, out var ground))
             SetGroundContact(ground, 1f);
+    }
+
+    void Update()
+    {
+        if (!driveAudio || !driveAudio.isActiveAndEnabled) return;
+        bool moving = Time.timeScale > 0f && Mathf.Abs(velocity) > audioMovementThreshold;
+        if (moving && driveAudio.clip && !driveAudio.isPlaying) driveAudio.Play();
+        else if (!moving && driveAudio.isPlaying) driveAudio.Stop();
     }
 
     void FixedUpdate()
@@ -151,7 +163,13 @@ public sealed class MoonRover : MonoBehaviour
         return nearest;
     }
 
-    public void Stop() => velocity = 0f;
+    public void Stop()
+    {
+        velocity = 0f;
+        if (driveAudio && driveAudio.isPlaying) driveAudio.Stop();
+    }
+
+    void OnDisable() => Stop();
 
     public bool TryDismount(CharacterController passenger, out Vector3 position)
     {

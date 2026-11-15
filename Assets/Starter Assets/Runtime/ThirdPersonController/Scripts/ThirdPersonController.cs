@@ -42,6 +42,9 @@ namespace StarterAssets
         [Tooltip("The character uses its own gravity value. The engine default is -9.81f")]
         public float Gravity = -15.0f;
 
+        [Tooltip("Small downward speed used to keep the controller in contact with the ground.")]
+        [Min(0.01f)] public float GroundedStickSpeed = 2.0f;
+
         [Space(10)]
         [Tooltip("Time required to pass before being able to jump again. Set to 0f to instantly jump again")]
         public float JumpTimeout = 0.50f;
@@ -285,8 +288,8 @@ namespace StarterAssets
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             // move the player
-            _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
-                             new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+            MoveController(targetDirection.normalized * (_speed * Time.deltaTime) +
+                           new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
 
             // update animator if using character
             if (_hasAnimator)
@@ -321,7 +324,7 @@ namespace StarterAssets
             }
 
             Vector3 previousPosition = transform.position;
-            _controller.Move((horizontal + Vector3.up * _verticalVelocity) * dt);
+            MoveController((horizontal + Vector3.up * _verticalVelocity) * dt);
 
             if (_hasAnimator)
             {
@@ -334,6 +337,14 @@ namespace StarterAssets
                 _animator.SetFloat(_animIDSpeed, blendSpeed);
                 _animator.SetFloat(_animIDMotionSpeed, 1f);
             }
+        }
+
+        private void MoveController(Vector3 motion)
+        {
+            CollisionFlags collisions = _controller.Move(motion);
+            // A low-gravity jump must begin falling immediately after hitting a ceiling.
+            if ((collisions & CollisionFlags.Above) != 0 && _verticalVelocity > 0f)
+                _verticalVelocity = 0f;
         }
 
         private void JumpAndGravity()
@@ -351,9 +362,9 @@ namespace StarterAssets
                 }
 
                 // stop our velocity dropping infinitely when grounded
-                if (_verticalVelocity < 0.0f)
+                if (_verticalVelocity < 0.0f && _controller.isGrounded)
                 {
-                    _verticalVelocity = -2f;
+                    _verticalVelocity = -Mathf.Max(.01f, GroundedStickSpeed);
                 }
 
                 // Jump
@@ -388,7 +399,7 @@ namespace StarterAssets
                 else
                 {
                     // update animator if using character
-                    if (_hasAnimator)
+                    if (_hasAnimator && _verticalVelocity <= 0f)
                     {
                         _animator.SetBool(_animIDFreeFall, true);
                     }

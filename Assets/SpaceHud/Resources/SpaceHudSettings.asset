@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa0a0e62f724b9a409bf7a8c899ee4b9, type: 3}
+  m_Name: SpaceHudSettings
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDilemma.Hud.HudSettings
+  installAutomatically: 1
+  sceneName: SampleScene
+  theme: {fileID: 11400000, guid: 81a0077dcc064b56f32f496e8dd9026b, type: 2}
+  pauseContext: {fileID: 11400000, guid: b23917d31dd04874cbd103c4ee1c616f, type: 2}
+  cameraHeight: 100
+  orthographicSize: 65
+  textureSize: 512
+  visibleLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  exampleTitle: "\ud0dc\uc591\uad11 \ubc1c\uc804\uc18c \ubcf5\uad6c"
+  exampleDescription: "\ubc1c\uc804\uae30 \uc815\uc0c1\ud654"
+  exampleCurrent: 0
+  exampleTotal: 1

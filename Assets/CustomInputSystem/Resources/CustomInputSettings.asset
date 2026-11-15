@@ -21,8 +21,8 @@ MonoBehaviour:
   solarGenerator: {fileID: 11400000, guid: a1f995d47b83ea84ab187505884a7449, type: 2}
   oxygenGenerator: {fileID: 11400000, guid: 7c86fb81924f9b14db52d45a05803c97, type: 2}
   serial:
-    connectOnStart: 0
-    portName: 
+    connectOnStart: 1
+    portName: com5
     baudRate: 115200
     dataBits: 8
     parity: 0

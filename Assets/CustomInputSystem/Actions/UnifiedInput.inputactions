@@ -317,6 +317,15 @@
           "initialStateCheck": false
         },
         {
+          "name": "Pause",
+          "type": "Button",
+          "id": "f9a21c44-b450-46ec-90bf-f02002f07ac0",
+          "expectedControlType": "Button",
+          "processors": "",
+          "interactions": "",
+          "initialStateCheck": false
+        },
+        {
           "name": "Point",
           "type": "PassThrough",
           "id": "f3ea5165-209c-424f-8926-4787f21be0db",
@@ -345,6 +354,17 @@
         }
       ],
       "bindings": [
+        {
+          "name": "",
+          "id": "55e9ef11-4780-4e71-a6f9-b8635606f03d",
+          "path": "<Keyboard>/escape",
+          "processors": "",
+          "interactions": "",
+          "groups": "",
+          "action": "Pause",
+          "isComposite": false,
+          "isPartOfComposite": false
+        },
         {
           "name": "",
           "id": "f8939ac9-f273-48be-9793-02f16ff1ab69",
@@ -687,7 +707,7 @@
         {
           "name": "",
           "id": "3aabc744-9222-4bb2-9acb-3af5a8681abe",
-          "path": "<Keyboard>/escape",
+          "path": "<Keyboard>/backspace",
           "processors": "",
           "interactions": "",
           "groups": "",
@@ -971,7 +991,7 @@
         {
           "name": "",
           "id": "6293cc13-e567-4e88-9fc7-f39641ae6301",
-          "path": "<Keyboard>/escape",
+          "path": "<Keyboard>/backspace",
           "processors": "",
           "interactions": "",
           "groups": "",
@@ -1277,7 +1297,7 @@
         {
           "name": "",
           "id": "14c851db-c6a2-41ad-98b3-cd4c9a0f7e55",
-          "path": "<Keyboard>/escape",
+          "path": "<Keyboard>/backspace",
           "processors": "",
           "interactions": "",
           "groups": "",
@@ -1583,7 +1603,7 @@
         {
           "name": "",
           "id": "a0371905-041d-4be1-bb41-bcdf134dfcd8",
-          "path": "<Keyboard>/escape",
+          "path": "<Keyboard>/backspace",
           "processors": "",
           "interactions": "",
           "groups": "",

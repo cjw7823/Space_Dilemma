@@ -2,6 +2,7 @@ using StarterAssets;
 using SpaceDilemma.CustomInput;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>Input capture and startup framing for the Starter Assets third-person motor.</summary>
@@ -15,11 +16,14 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
     public bool showControls=true;
     public bool ControlCaptured { get; private set; }
     public bool IsDriving { get; private set; }
+    public bool ExitBlocked => exitBlocked;
     ThirdPersonController motor;
     StarterAssetsInputs input;
     PlayerInput playerInput;
     CharacterController bodyCollider;
     Renderer[] avatarRenderers;
+    Animator avatarAnimator;
+    bool animatorWasEnabled;
     Transform walkingTarget;
     CinemachineThirdPersonFollow follow;
     float walkingCameraDistance;
@@ -32,6 +36,7 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
         motor=GetComponent<ThirdPersonController>(); input=GetComponent<StarterAssetsInputs>(); playerInput=GetComponent<PlayerInput>();
         bodyCollider = GetComponent<CharacterController>();
         avatarRenderers = GetComponentsInChildren<Renderer>();
+        avatarAnimator = GetComponentInChildren<Animator>();
         if (thirdPersonCamera)
         {
             walkingTarget = thirdPersonCamera.Follow;
@@ -99,8 +104,10 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
         if (useUnified && focused && !ControlCaptured && unified.NonPointerGameplayActivity)
             SetControlCaptured(true);
         bool released=false;
-        if(keyboard!=null && keyboard.escapeKey.wasPressedThisFrame) { SetControlCaptured(false); released=true; }
-        if(!released && focused && !ControlCaptured && mouse!=null && mouse.leftButton.wasPressedThisFrame)
+        bool pauseActionAvailable = useUnified && unified.Actions.FindAction("Global/Pause", false) != null;
+        if(keyboard!=null && (pauseActionAvailable ? keyboard.tabKey.wasPressedThisFrame : keyboard.escapeKey.wasPressedThisFrame)) { SetControlCaptured(false); released=true; }
+        bool overUi = EventSystem.current && EventSystem.current.IsPointerOverGameObject();
+        if(!released && focused && !ControlCaptured && !overUi && mouse!=null && mouse.leftButton.wasPressedThisFrame)
             SetControlCaptured(true);
 
         // Read the live PlayerInput action copy every frame, including releases.
@@ -145,6 +152,16 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
         drivePitch = 24f;
         motor.enabled = false;
         bodyCollider.enabled = false;
+        if (avatarAnimator)
+        {
+            animatorWasEnabled = avatarAnimator.enabled;
+            if (animatorWasEnabled)
+            {
+                avatarAnimator.SetFloat("Speed", 0f);
+                avatarAnimator.SetFloat("MotionSpeed", 0f);
+                avatarAnimator.enabled = false;
+            }
+        }
         foreach (var renderer in avatarRenderers) renderer.forceRenderingOff = true;
         follow.CameraDistance = rover.CameraDistance;
         rover.cameraTarget.rotation = rover.transform.rotation * Quaternion.Euler(drivePitch, 0f, 0f);
@@ -168,6 +185,7 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
         motor.Grounded = true;
         bodyCollider.enabled = true;
         motor.enabled = true;
+        if (avatarAnimator) avatarAnimator.enabled = animatorWasEnabled;
         foreach (var renderer in avatarRenderers) renderer.forceRenderingOff = false;
         follow.CameraDistance = walkingCameraDistance;
         thirdPersonCamera.Follow = walkingTarget;
@@ -184,15 +202,5 @@ public sealed class MoonBasePlayer : MonoBehaviour, IGameplayInputClient
     }
     void ClearInput() { if(input) {input.move=Vector2.zero; input.look=Vector2.zero; input.jump=false; input.sprint=false;} }
     void OnApplicationFocus(bool hasFocus) { focused=hasFocus; if(!hasFocus) SetControlCaptured(false); }
-    void OnDisable() { SetControlCaptured(false); }
-    void OnGUI()
-    {
-        if(!showControls) return;
-        GUI.Box(new Rect(12,12,346,60),GUIContent.none);
-        string controls = IsDriving ? "WASD Drive   T Exit rover" : "WASD Move   Shift Run   Space Jump";
-        if (IsDriving && exitBlocked) controls = "Exit blocked. Move the rover to clear space.";
-        else if (!IsDriving && ControlCaptured && rover && rover.CanBoard(transform.position)) controls = "T Board rover";
-        GUI.Label(new Rect(24,20,322,24),controls);
-        GUI.Label(new Rect(24,44,322,24),ControlCaptured?"Esc: release cursor":"Click the Game view to control the player");
-    }
+    void OnDisable() { if (IsDriving && rover) rover.Stop(); SetControlCaptured(false); }
 }

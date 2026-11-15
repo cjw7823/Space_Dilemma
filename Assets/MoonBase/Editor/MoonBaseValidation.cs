@@ -204,7 +204,9 @@ public static class MoonBaseValidation
                 startY=p.transform.position.y; peak=startY; Keys(Key.Space); Next(10,p); break;
             case 10:
                 peak=Mathf.Max(peak,p.transform.position.y);
-                if(elapsed<2) return;
+                // A lunar-gravity jump remains airborne longer than the original Earth-like setting.
+                float flightTime=2f*Mathf.Sqrt(2f*Mathf.Max(0f,motor.JumpHeight)/Mathf.Max(.01f,-motor.Gravity));
+                if(elapsed<Mathf.Max(2f,flightTime+.7f)) return;
                 Check(peak-startY>.5f,"Space performs a jump: rise="+(peak-startY));
                 Check(Mathf.Abs(p.transform.position.y-startY)<.2f&&motor.Grounded,"Holding Space does not repeatedly jump after landing");
                 Keys(); p.SetControlCaptured(false); Next(11,p); break;

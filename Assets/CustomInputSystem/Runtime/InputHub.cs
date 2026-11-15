@@ -57,19 +57,23 @@ namespace SpaceDilemma.CustomInput
         InputSystemUIInputModule uiModule;
         InputActionAsset originalUiActions;
         InputSystemUIInputModule originalPlayerUi;
-        bool createdEventSystem, originalUiEnabled;
-        bool createdUiModule;
+        bool originalUiEnabled;
         InputActionReference oldMove, oldSubmit, oldCancel, oldPoint, oldClick, oldScroll;
         bool pendingDeviceRefresh;
         bool contextDirty;
         readonly List<InputActionReference> ownedReferences = new List<InputActionReference>();
 
-        public void Initialize(CustomInputSettings configuration, PlayerInput target)
+        public void Initialize(CustomInputSettings configuration, PlayerInput target, bool allowAutomaticSerial = true)
         {
             if (initialized) return;
             if (!configuration || !configuration.actions || !configuration.gameplay) throw new InvalidOperationException("Custom Input settings/actions/Gameplay profile missing.");
             if (!target) throw new InvalidOperationException("Attach a PlayerInput to use the game bridge.");
+            var eventSystem = FindObjectsByType<EventSystem>(FindObjectsSortMode.None)
+                .FirstOrDefault(item => item.gameObject.scene == target.gameObject.scene);
+            var sceneUiModule = eventSystem ? eventSystem.GetComponent<InputSystemUIInputModule>() : null;
+            if (!sceneUiModule) throw new InvalidOperationException("Add an EventSystem with an InputSystemUIInputModule to the scene before initializing Custom Input.");
             settings = Instantiate(configuration); player = target;
+            SerialPortPreferences.Load(settings.serial);
             originalActions = player.actions; originalAutoSwitch = player.neverAutoSwitchControlSchemes;
             originalPlayerUi = player.uiInputModule;
             originalScheme = player.currentControlScheme; originalDefaultMap = player.defaultActionMap;
@@ -83,7 +87,7 @@ namespace SpaceDilemma.CustomInput
             Actions = player.actions;
             Serial = new SerialInputBackend(settings.serial, settings.calibration);
             Contexts = new InputContextStack(settings.gameplay);
-            SetupEventSystem();
+            SetupEventSystem(sceneUiModule);
             foreach (var map in Actions.actionMaps) map.actionTriggered += OnAction;
             Contexts.Changed += ScheduleContext;
             InputSystem.onBeforeUpdate += BeforeInputUpdate;
@@ -91,19 +95,12 @@ namespace SpaceDilemma.CustomInput
             InputUser.onChange += UserChanged;
             initialized = true; Active = this;
             PairDevices(); ApplyContext(Contexts.Current);
-            if (settings.serial.connectOnStart && !string.IsNullOrEmpty(settings.serial.portName)) Serial.Connect();
+            if (allowAutomaticSerial && settings.serial.connectOnStart && !string.IsNullOrEmpty(settings.serial.portName)) Serial.Connect();
         }
 
-        void SetupEventSystem()
+        void SetupEventSystem(InputSystemUIInputModule sceneUiModule)
         {
-            var existing = FindFirstObjectByType<EventSystem>();
-            if (!existing)
-            {
-                var go = new GameObject("Custom Input EventSystem", typeof(EventSystem));
-                go.transform.SetParent(transform); existing = go.GetComponent<EventSystem>(); createdEventSystem = true;
-            }
-            uiModule = existing.GetComponent<InputSystemUIInputModule>();
-            if (!uiModule) { uiModule = existing.gameObject.AddComponent<InputSystemUIInputModule>(); createdUiModule = true; }
+            uiModule = sceneUiModule;
             originalUiEnabled = uiModule.enabled; originalUiActions = uiModule.actionsAsset;
             oldMove = uiModule.move; oldSubmit = uiModule.submit; oldCancel = uiModule.cancel;
             oldPoint = uiModule.point; oldClick = uiModule.leftClick; oldScroll = uiModule.scrollWheel;
@@ -154,8 +151,17 @@ namespace SpaceDilemma.CustomInput
                 gameplayClient?.SetControlCaptured(false);
                 Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             }
-            else if (capturedBeforeContext)
-            { gameplayClient?.SetControlCaptured(true); capturedBeforeContext = false; }
+            else
+            {
+                // The always-visible HUD still needs pointer clicks during gameplay.
+                // Navigation/submit stay disabled until a modal context is active.
+                uiModule.point = Reference("Global/Point"); uiModule.leftClick = Reference("Global/Click");
+                uiModule.scrollWheel = Reference("Global/Scroll");
+                uiModule.move = null; uiModule.submit = null; uiModule.cancel = null;
+                uiModule.enabled = true;
+                if (capturedBeforeContext)
+                { gameplayClient?.SetControlCaptured(true); capturedBeforeContext = false; }
+            }
             // A stick/key held across a modal/context boundary must return to neutral first.
             foreach (var action in currentMap.actions)
                 if (IsDirectional(action) && !ControlsNeutral(action)) { action.Disable(); neutralGates.Add(action); }
@@ -273,15 +279,10 @@ namespace SpaceDilemma.CustomInput
             }
             if (uiModule)
             {
-                if (createdEventSystem) Destroy(uiModule.gameObject);
-                else if (createdUiModule) Destroy(uiModule);
-                else
-                {
-                    uiModule.actionsAsset = originalUiActions;
-                    uiModule.move = oldMove; uiModule.submit = oldSubmit; uiModule.cancel = oldCancel;
-                    uiModule.point = oldPoint; uiModule.leftClick = oldClick; uiModule.scrollWheel = oldScroll;
-                    uiModule.enabled = originalUiEnabled;
-                }
+                uiModule.actionsAsset = originalUiActions;
+                uiModule.move = oldMove; uiModule.submit = oldSubmit; uiModule.cancel = oldCancel;
+                uiModule.point = oldPoint; uiModule.leftClick = oldClick; uiModule.scrollWheel = oldScroll;
+                uiModule.enabled = originalUiEnabled;
             }
             if (Actions) Destroy(Actions);
             foreach (var reference in ownedReferences) Destroy(reference);

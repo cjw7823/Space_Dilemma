@@ -5,8 +5,8 @@
 ## 1. 시작과 현재 씬
 
 - 실제 작업 씬은 `Assets/Scenes/SampleScene.unity`입니다. 요청문에 나온 `Assets/New Scene.unity`는 현재 프로젝트에 없습니다.
-- Play 시 `Resources/CustomInputSettings.asset`를 읽고, SampleScene의 기존 PlayerInput에 런타임 복제 Action Asset을 연결합니다. 원래 씬·프리팹·Starter Assets Input Actions 파일을 저장하거나 덮어쓰지 않습니다. 종료 시 원래 PlayerInput 설정을 복원합니다.
-- 키보드 조작은 기존과 같습니다. Game 뷰 클릭으로 조작 시작, WASD/방향키 이동, 마우스 시선, Space 점프, Shift 달리기, T 로버 탑승/하차, Esc 커서 해제입니다. 클릭에 필요한 원래 포커스 정책도 보존합니다.
+- SampleScene의 `Custom Input System` 오브젝트와 그 아래 F2 예제 Canvas는 씬에 저장되어 있어 직접 편집할 수 있습니다. Play 시 `Resources/CustomInputSettings.asset`를 읽어 기존 PlayerInput에 런타임 복제 Action Asset을 연결하고, 종료 시 원래 PlayerInput 설정을 복원합니다.
+- Game 뷰 클릭으로 조작 시작, WASD/방향키 이동, 마우스 시선, Space 점프, Shift 달리기, T 로버 탑승/하차입니다. HUD 통합 후 Esc는 일시정지/재개, Tab은 커서 해제입니다. 예제 UI에서 이전 단계는 Backspace 또는 게임패드 B입니다. 자세한 HUD 안내는 `Assets/SpaceHud/README.md`를 참고하세요.
 - 게임패드: 왼쪽 스틱 이동, 오른쪽 스틱 시선, South(A/×) 점프, West(X/□) 상호작용/로버, 왼쪽 트리거 달리기. 조작 입력이 있으면 마우스를 클릭하지 않아도 플레이어 조작을 시작할 수 있습니다.
 - **F2 / Gamepad Start / Serial 논리 button2**로 예제 메뉴를 엽니다. 실제 시설 운영 시스템이 현재 씬에 없으므로 Solar/Oxygen 예제는 입력과 UI 값 전달만 보여 줍니다. 실제 전력·산소 계산을 구현한 것이 아닙니다.
 
@@ -39,7 +39,7 @@ COM → background reader → LF decoder → parser  │
 - `Runtime/InputContextStack.cs`, `InputContextProfile.cs`: 우선순위와 토큰 기반 중첩/복원.
 - `Runtime/FacilityInputReceiver.cs`: 시설의 논리 액션을 Inspector UnityEvent로 연결합니다.
 - `Runtime/UiSelectionScroll.cs`: 비포인터 스틱 스크롤을 선택된 UI의 EventSystem 계층으로 보냅니다. 마우스 휠은 InputSystemUIInputModule이 처리합니다.
-- `Runtime/CustomInputBootstrap.cs`, `CustomInputDemoPanel.cs`: SampleScene 자동 설치와 숨겨진 예제 메뉴.
+- `Runtime/CustomInputBootstrap.cs`, `CustomInputDemoPanel.cs`: 씬에 미리 배치한 InputHub 연결과 예제 메뉴 상태 제어. UI 오브젝트를 런타임에 생성하지 않습니다.
 - `Actions/UnifiedInput.inputactions`: Unity 기본 Actions Editor로 수정하는 실제 binding 목록.
 - `Profiles/`, `Resources/`: 컨텍스트·통신·보정 기본 에셋.
 - `Editor/`: 설정 생성, 디버거, 회귀 검사. 프로덕션 빌드에는 포함되지 않습니다.
@@ -69,7 +69,7 @@ S,SEQ,K,S1,JX1,JY1,JX2,JY2,B\n
 
 1. `Tools > Custom Input > Debugger`를 열고 SampleScene을 Play합니다.
 2. Refresh COM ports 후 선택하거나 COM3처럼 직접 입력합니다.
-3. 기본은 115200 / 8 / None / One, Flow Control 없음, DTR ON/RTS OFF입니다. 포트 이름은 비어 있고 **자동 연결 기본 OFF**라 다른 장치를 임의로 열지 않습니다.
+3. 초기 기본값은 115200 / 8 / None / One, Flow Control 없음, DTR ON/RTS OFF이며 포트 이름은 비어 있고 자동 연결은 OFF입니다. 사용자가 변경한 현재 포트와 자동 연결 설정은 `CustomInputSettings` Inspector에서 확인하세요.
 4. Connect / reconnect를 누릅니다. Arduino IDE의 Serial Monitor 등 포트 점유 프로그램은 닫습니다. 변경된 통신 설정은 재연결 때 적용됩니다.
 5. 기본 Input Timeout 1초, 시작 유예 3초, 재연결 간격 1초이며 모두 설정 가능합니다. 유효한 S가 오지 않으면 버튼/축을 0으로 리셋하고 연결을 재시도합니다. 형식 오류만 계속 오는 경우에도 정상 입력 타임아웃이 적용됩니다.
 6. Disconnect는 재시도를 중단하고 입력을 리셋합니다. 포트 실패는 상태/오류 카운터로 표시하며 HID/키보드는 계속 사용할 수 있습니다.
@@ -188,6 +188,6 @@ Player/Jump의 Performed와 Canceled가 모두 trace에 나타납니다. Simulat
 
 완료한 자동 검사/렌더/보존 감사의 최신 결과는 `Tests/Results/VALIDATION.md`에 기록합니다. 실물 HID 게임패드, Arduino 보드, USB 탈착, 보드 리셋, DTR/RTS 동작, 실제 Serial 지연, 펌웨어 디바운스는 별도 확인해야 합니다. 가상 Gamepad 이벤트는 Unity가 인식한 컨트롤러 이후의 Action/게임 경로를 검사하며 드라이버/무선 링크를 증명하지 않습니다.
 
-Serial은 Windows 전용이며 독점 COM 열기를 사용합니다. 단일 플레이어 통합이므로 여러 로컬 플레이어를 자동으로 한 사용자에 합치지 않습니다. 원본 설정 생성 메뉴는 에셋이 이미 있으면 덮어쓰지 않습니다. 자동 설치를 끄려면 Settings.Install Automatically를 해제하고 원하는 GameObject에서 `InputHub.Initialize(settings, playerInput)`을 호출하세요.
+Serial은 Windows 전용이며 독점 COM 열기를 사용합니다. 단일 플레이어 통합이므로 여러 로컬 플레이어를 자동으로 한 사용자에 합치지 않습니다. 원본 설정 생성 메뉴는 에셋이 이미 있으면 덮어쓰지 않습니다. 입력 시스템의 자동 초기화를 끄려면 Settings.Install Automatically를 해제하고 씬에 배치한 `InputHub`에서 `Initialize(settings, playerInput)`을 호출하세요. 같은 씬에 `EventSystem`과 `InputSystemUIInputModule`을 미리 배치해야 합니다.
 
 참고: [Unity custom devices](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.20/manual/Devices.html), [Actions binding resolution](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.20/manual/ActionBindings.html), [PlayerInput + UI](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.20/manual/PlayerInput.html). 구현 API는 프로젝트에 설치된 Input System 1.20.1 소스와 대조했습니다.
